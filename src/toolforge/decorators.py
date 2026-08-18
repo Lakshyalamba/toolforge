@@ -32,9 +32,17 @@ class ToolDecorator:
         # Used as @tool(name=..., description=...)
         name: str | None = kwargs.get("name")
         description: str | None = kwargs.get("description")
+        tags: list[str] | None = kwargs.get("tags")
+        metadata: dict[str, Any] | None = kwargs.get("metadata")
 
         def decorator(func: F) -> F:
-            tool = Tool(func, name=name, description=description)
+            tool = Tool(
+                func,
+                name=name,
+                description=description,
+                tags=tags,
+                metadata=metadata,
+            )
             self._registry.register(tool)
             return func
 
