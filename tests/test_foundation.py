@@ -190,7 +190,7 @@ def test_tool_docstring_fallback() -> None:
         return x
 
     tool_obj = server.get_tool("no_doc")
-    assert tool_obj.description == ""
+    assert tool_obj.description == "No description provided."
 
 
 def test_parameter_introspection_details() -> None:
