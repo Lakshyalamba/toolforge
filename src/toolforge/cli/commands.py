@@ -122,7 +122,10 @@ def run_command(file_path: str | None) -> None:
 
 
 def list_command(file_path: str | None) -> None:
-    """Print all registered tools in the project without booting the server."""
+    """Print all registered tools, resources, and prompts in the project.
+
+    Does so without booting the server.
+    """
     try:
         server, _ = resolve_server_instance(file_path)
     except ConfigurationError as e:
@@ -138,9 +141,29 @@ def list_command(file_path: str | None) -> None:
         first_line = desc.split("\n")[0] if desc else ""
         print(f"{tool.name:<9} {first_line}")
 
+    resources = server.list_resources()
+    if resources:
+        print()
+        print("Resources")
+        print("─────────────────────────")
+        for res in resources:
+            desc = res.description or ""
+            first_line = desc.split("\n")[0] if desc else ""
+            print(f"{res.uri:<15} {first_line}")
+
+    prompts = server.list_prompts()
+    if prompts:
+        print()
+        print("Prompts")
+        print("─────────────────────────")
+        for pr in prompts:
+            desc = pr.description or ""
+            first_line = desc.split("\n")[0] if desc else ""
+            print(f"{pr.name:<15} {first_line}")
+
 
 def inspect_command(file_path: str | None, tool_name: str | None = None) -> None:
-    """Inspect the server configuration or specific tool schema detail."""
+    """Inspect the server configuration, specific tool, resource, or prompt detail."""
     try:
         server, project = resolve_server_instance(file_path)
     except ConfigurationError as e:
@@ -165,29 +188,91 @@ def inspect_command(file_path: str | None, tool_name: str | None = None) -> None
         print("─────────────────────────")
         for tool in server.tools:
             print(tool.name)
+
+        resources = server.list_resources()
+        if resources:
+            print()
+            print("Resources")
+            print("─────────────────────────")
+            for res in resources:
+                print(res.uri)
+
+        prompts = server.list_prompts()
+        if prompts:
+            print()
+            print("Prompts")
+            print("─────────────────────────")
+            for pr in prompts:
+                print(pr.name)
     else:
+        # 1. Try to find a matching tool
         target_tool = None
         for tool in server.tools:
             if tool.name == tool_name:
                 target_tool = tool
                 break
-        if target_tool is None:
-            print(f"Error: tool '{tool_name}' is not registered.", file=sys.stderr)
-            sys.exit(1)
 
-        print(f"Tool: {target_tool.name}")
-        print()
-        print("Description:")
-        print(target_tool.description or "")
-        print()
-        print("Parameters:")
-        print()
-        for p_name, p in target_tool.parameters.items():
-            required_str = "yes" if p.required else "no"
-            type_name = getattr(p.annotation, "__name__", str(p.annotation))
-            print(f"{p_name}")
-            print(f"  type: {type_name}")
-            print(f"  required: {required_str}")
+        if target_tool is not None:
+            print(f"Tool: {target_tool.name}")
             print()
-        print("Input Schema:")
-        print(json.dumps(target_tool.input_schema, indent=4))
+            print("Description:")
+            print(target_tool.description or "")
+            print()
+            print("Parameters:")
+            print()
+            for p_name, p in target_tool.parameters.items():
+                required_str = "yes" if p.required else "no"
+                type_name = getattr(p.annotation, "__name__", str(p.annotation))
+                print(f"{p_name}")
+                print(f"  type: {type_name}")
+                print(f"  required: {required_str}")
+                print()
+            print("Input Schema:")
+            print(json.dumps(target_tool.input_schema, indent=4))
+            return
+
+        # 2. Try to find a matching resource
+        target_resource = None
+        for res in server.list_resources():
+            if res.uri == tool_name:
+                target_resource = res
+                break
+
+        if target_resource is not None:
+            print(f"Resource: {target_resource.uri}")
+            print()
+            print(f"  Name: {target_resource.name}")
+            print(f"  MIME: {target_resource.mime_type or 'unspecified'}")
+            print(f"  Description: {target_resource.description or ''}")
+            return
+
+        # 3. Try to find a matching prompt
+        target_prompt = None
+        for pr in server.list_prompts():
+            if pr.name == tool_name:
+                target_prompt = pr
+                break
+
+        if target_prompt is not None:
+            print(f"Prompt: {target_prompt.name}")
+            print()
+            print("Description:")
+            print(target_prompt.description or "")
+            print()
+            print("Arguments:")
+            for p_name, p in target_prompt.parameters.items():
+                required_str = "yes" if p.required else "no"
+                type_name = getattr(p.annotation, "__name__", str(p.annotation))
+                if type_name == "str":
+                    type_name = "string"
+                print(f"  {p_name}")
+                print(f"    type: {type_name}")
+                print(f"    required: {required_str}")
+                print()
+            return
+
+        print(
+            f"Error: tool, resource, or prompt '{tool_name}' is not registered.",
+            file=sys.stderr,
+        )
+        sys.exit(1)

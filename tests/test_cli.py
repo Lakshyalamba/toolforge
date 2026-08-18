@@ -104,11 +104,27 @@ def test_cli_list_inspect_success() -> None:
         run_cli(["init", tmpdir])
         server_py = os.path.join(tmpdir, "server.py")
 
+        # Append a resource and a prompt to server.py
+        with open(server_py, "a") as f:
+            f.write(
+                "\n\n@server.resource('config://app', description='App Config')\n"
+                "def app_config():\n"
+                "    return 'data'\n"
+            )
+            f.write(
+                "\n\n@server.prompt(name='code-review', "
+                "description='Generate a code review prompt')\n"
+                "def code_review(language: str):\n"
+                "    return f'Review this {language} code.'\n"
+            )
+
         # 1. Test list
         res_list = run_cli(["list", "--file", server_py])
         assert res_list.returncode == 0
         assert "ToolForge Server: " in res_list.stdout
         assert "add" in res_list.stdout
+        assert "config://app" in res_list.stdout
+        assert "code-review" in res_list.stdout
 
         # 2. Test inspect general
         res_inspect = run_cli(["inspect", "--file", server_py])
@@ -116,6 +132,8 @@ def test_cli_list_inspect_success() -> None:
         assert "ToolForge Project" in res_inspect.stdout
         assert "stdio" in res_inspect.stdout
         assert "add" in res_inspect.stdout
+        assert "config://app" in res_inspect.stdout
+        assert "code-review" in res_inspect.stdout
 
         # 3. Test inspect specific tool
         res_inspect_tool = run_cli(["inspect", "add", "--file", server_py])
@@ -132,10 +150,21 @@ def test_cli_list_inspect_success() -> None:
         assert schema["type"] == "object"
         assert "a" in schema["properties"]
 
-        # 4. Test inspect missing tool
+        # 4. Test inspect specific prompt
+        res_inspect_prompt = run_cli(["inspect", "code-review", "--file", server_py])
+        assert res_inspect_prompt.returncode == 0
+        assert "Prompt: code-review" in res_inspect_prompt.stdout
+        assert "Generate a code review prompt" in res_inspect_prompt.stdout
+        assert "language" in res_inspect_prompt.stdout
+        assert "type: string" in res_inspect_prompt.stdout
+
+        # 5. Test inspect missing tool
         res_missing_tool = run_cli(["inspect", "nonexistent_tool", "--file", server_py])
         assert res_missing_tool.returncode != 0
-        assert "Error: tool 'nonexistent_tool' is not registered" in res_missing_tool.stderr
+        assert (
+            "Error: tool, resource, or prompt 'nonexistent_tool' is not registered"
+            in res_missing_tool.stderr
+        )
 
 
 def test_cli_invalid_project() -> None:
