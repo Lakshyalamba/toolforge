@@ -7,7 +7,7 @@ from toolforge.registry import Tool
 
 async def execute_tool(tool: Tool, arguments: dict[str, Any]) -> Any:
     """Execute a tool asynchronously with the provided arguments.
-    
+
     If the underlying function is synchronous, it runs directly.
     If it is a coroutine, it is awaited.
     """

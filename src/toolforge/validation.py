@@ -23,9 +23,7 @@ def _validate_type(val: Any, ann: Any, param_name: str, tool_name: str) -> Any:
 
     # Union Types / Optional
     origin = getattr(ann, "__origin__", None)
-    if origin is typing.Union or (
-        hasattr(types, "UnionType") and isinstance(ann, types.UnionType)
-    ):
+    if origin is typing.Union or (hasattr(types, "UnionType") and isinstance(ann, types.UnionType)):
         args = typing.get_args(ann)
         # Try to validate against each union type option
         for arg in args:

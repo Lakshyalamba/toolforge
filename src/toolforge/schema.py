@@ -37,9 +37,7 @@ def _map_type(ann: Any, param_name: str, tool_name: str) -> dict[str, Any]:
 
     # Handle standard Unions and Python 3.10+ UnionTypes
     origin = getattr(ann, "__origin__", None)
-    if origin is typing.Union or (
-        hasattr(types, "UnionType") and isinstance(ann, types.UnionType)
-    ):
+    if origin is typing.Union or (hasattr(types, "UnionType") and isinstance(ann, types.UnionType)):
         args = typing.get_args(ann)
         is_nullable = type(None) in args
         non_null_args = [arg for arg in args if arg is not type(None)]
@@ -139,6 +137,7 @@ def generate_tool_schema(func: Any, name: str, description: str) -> dict[str, An
     Preserves existing functionality by delegating to input schema generation.
     """
     from toolforge.registry import Tool
+
     tool = Tool(func, name=name, description=description)
     return {
         "name": name,

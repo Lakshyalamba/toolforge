@@ -7,6 +7,7 @@ def test_import_server() -> None:
         ToolForgeError,
         ToolRegistrationError,
     )
+
     assert MCPServer is not None
     assert ToolForgeError is not None
     assert ToolRegistrationError is not None

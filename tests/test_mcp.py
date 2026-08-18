@@ -72,4 +72,3 @@ async def test_mcp_adapter_execution_error() -> None:
     result = await adapter.handle_call_tool(ctx, call_params)
     assert result.is_error is True
     assert "division by zero" in result.content[0].text
-

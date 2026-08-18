@@ -48,7 +48,7 @@ def test_validation_invalid_string() -> None:
 
     with pytest.raises(ToolValidationError) as exc_info:
         validate_tool_arguments(tool, {"a": 123})
-    
+
     err = str(exc_info.value)
     assert "test_tool" in err
     assert "parameter 'a' expected string, received int" in err

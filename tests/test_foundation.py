@@ -57,16 +57,20 @@ def test_duplicate_and_invalid_tool_names() -> None:
 
     # Duplicate name should raise ToolAlreadyRegisteredError
     with pytest.raises(ToolAlreadyRegisteredError) as exc_info:
+
         @server.tool(name="my_tool")
         def another_tool() -> str:
             return "duplicate"
+
     assert "Duplicate tool name" in str(exc_info.value)
 
     # Invalid characters in name should raise ToolRegistrationError
     with pytest.raises(ToolRegistrationError) as exc_info:
+
         @server.tool(name="invalid name with spaces")
         def bad_name_tool() -> str:
             return "bad"
+
     assert "Invalid tool name" in str(exc_info.value)
 
 
@@ -156,6 +160,7 @@ async def test_tool_execution_async() -> None:
 
 # --- NEW COMPREHENSIVE TESTS ---
 
+
 def test_registry_independent_usage() -> None:
     """Test ToolRegistry works independently without MCPServer."""
     registry = ToolRegistry()
@@ -203,7 +208,7 @@ def test_parameter_introspection_details() -> None:
         pass
 
     tool_obj = server.get_tool("complex_params")
-    
+
     assert "a" in tool_obj.parameters
     param_a = tool_obj.parameters["a"]
     assert param_a.name == "a"
@@ -233,6 +238,7 @@ def test_mcpserver_run_setup() -> None:
     """Test MCPServer runner can be set up correctly."""
     server = MCPServer("test")
     from toolforge.mcp.server import MCPServerRunner
+
     runner = MCPServerRunner(server.name, server.registry)
     assert runner.server_name == "test"
 

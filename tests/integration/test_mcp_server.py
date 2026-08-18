@@ -56,9 +56,7 @@ async def test_mcp_server_flow_verification() -> None:
     init_options = InitializationOptions(
         server_name=server.name,
         server_version="0.1.0",
-        capabilities=t.ServerCapabilities(
-            tools=t.ToolsCapability(list_changed=False)
-        ),
+        capabilities=t.ServerCapabilities(tools=t.ToolsCapability(list_changed=False)),
     )
 
     async def run_server() -> None:

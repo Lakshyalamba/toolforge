@@ -90,6 +90,7 @@ class Tool:
     def input_schema(self) -> dict[str, Any]:
         """Generate the input JSON Schema for this tool's parameters."""
         from toolforge.schema import generate_input_schema
+
         return generate_input_schema(self.parameters, self.name)
 
     @property
