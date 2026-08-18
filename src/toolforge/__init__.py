@@ -5,6 +5,10 @@ from toolforge.errors import (
     InvalidConfigurationError,
     MiddlewareError,
     ProjectNotFoundError,
+    ResourceAlreadyRegisteredError,
+    ResourceExecutionError,
+    ResourceNotFoundError,
+    ResourceRegistrationError,
     SchemaGenerationError,
     ToolAlreadyRegisteredError,
     ToolExecutionError,
@@ -21,6 +25,8 @@ from toolforge.middleware import (
     timing_middleware,
 )
 from toolforge.project import Project, load_server_from_file, load_server_from_project
+from toolforge.prompts import Prompt, PromptParameter, PromptRegistry
+from toolforge.resources import Resource, ResourceRegistry
 from toolforge.server import MCPServer
 
 __all__ = [
@@ -32,6 +38,15 @@ __all__ = [
     "MiddlewareError",
     "Project",
     "ProjectNotFoundError",
+    "Prompt",
+    "PromptParameter",
+    "PromptRegistry",
+    "Resource",
+    "ResourceAlreadyRegisteredError",
+    "ResourceExecutionError",
+    "ResourceNotFoundError",
+    "ResourceRegistrationError",
+    "ResourceRegistry",
     "SchemaGenerationError",
     "ToolAlreadyRegisteredError",
     "ToolExecutionError",

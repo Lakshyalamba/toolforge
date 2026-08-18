@@ -68,3 +68,27 @@ class MiddlewareError(ToolForgeError):
     """Raised when middleware logic fails or raises an error."""
 
     pass
+
+
+class ResourceRegistrationError(ToolForgeError):
+    """Raised when registering a resource fails."""
+
+    pass
+
+
+class ResourceAlreadyRegisteredError(ResourceRegistrationError):
+    """Raised when a resource with the same URI is already registered."""
+
+    pass
+
+
+class ResourceNotFoundError(ToolForgeError):
+    """Raised when a resource is looked up but not found."""
+
+    pass
+
+
+class ResourceExecutionError(ToolForgeError):
+    """Raised when executing/reading a resource fails."""
+
+    pass

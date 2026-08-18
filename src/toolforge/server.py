@@ -1,7 +1,9 @@
 from collections.abc import Callable
 
 from toolforge.decorators import ToolDecorator
+from toolforge.prompts import Prompt, PromptDecorator, PromptRegistry
 from toolforge.registry import Tool, ToolRegistry
+from toolforge.resources import Resource, ResourceDecorator, ResourceRegistry
 
 
 class MCPServer:
@@ -11,6 +13,10 @@ class MCPServer:
         self.name = name
         self.registry = ToolRegistry()
         self.tool = ToolDecorator(self.registry)
+        self.resource_registry = ResourceRegistry()
+        self.resource = ResourceDecorator(self.resource_registry)
+        self.prompt_registry = PromptRegistry()
+        self.prompt = PromptDecorator(self.prompt_registry)
         self.middlewares: list[Callable] = []
         self.startup_hooks: list[Callable] = []
         self.shutdown_hooks: list[Callable] = []
@@ -51,3 +57,35 @@ class MCPServer:
     def get_tool(self, name: str) -> Tool:
         """Retrieve a registered tool by name."""
         return self.registry.get(name)
+
+    def has_tool(self, name: str) -> bool:
+        """Check if a tool is registered by name."""
+        return self.registry.contains(name)
+
+    def list_tools(self) -> list[Tool]:
+        """Return a list of all registered tools."""
+        return self.registry.list()
+
+    def get_resource(self, uri: str) -> Resource:
+        """Retrieve a registered resource by URI."""
+        return self.resource_registry.get(uri)
+
+    def has_resource(self, uri: str) -> bool:
+        """Check if a resource is registered by URI."""
+        return self.resource_registry.contains(uri)
+
+    def list_resources(self) -> list[Resource]:
+        """Return a list of all registered resources."""
+        return self.resource_registry.list()
+
+    def get_prompt(self, name: str) -> Prompt:
+        """Retrieve a registered prompt by name."""
+        return self.prompt_registry.get(name)
+
+    def has_prompt(self, name: str) -> bool:
+        """Check if a prompt is registered by name."""
+        return self.prompt_registry.contains(name)
+
+    def list_prompts(self) -> list[Prompt]:
+        """Return a list of all registered prompts."""
+        return self.prompt_registry.list()
