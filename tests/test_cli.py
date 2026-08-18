@@ -91,11 +91,11 @@ def test_cli_list_inspect_missing_server() -> None:
     """Verify list and inspect exit non-zero when target server file is missing."""
     res_list = run_cli(["list", "--file", "nonexistent_server.py"])
     assert res_list.returncode != 0
-    assert "Error: 'nonexistent_server.py' was not found" in res_list.stderr
+    assert "ToolForge entrypoint 'nonexistent_server.py' was not found" in res_list.stderr
 
     res_inspect = run_cli(["inspect", "--file", "nonexistent_server.py"])
     assert res_inspect.returncode != 0
-    assert "Error: 'nonexistent_server.py' was not found" in res_inspect.stderr
+    assert "ToolForge entrypoint 'nonexistent_server.py' was not found" in res_inspect.stderr
 
 
 def test_cli_list_inspect_success() -> None:
@@ -113,7 +113,7 @@ def test_cli_list_inspect_success() -> None:
         # 2. Test inspect general
         res_inspect = run_cli(["inspect", "--file", server_py])
         assert res_inspect.returncode == 0
-        assert "Server" in res_inspect.stdout
+        assert "ToolForge Project" in res_inspect.stdout
         assert "stdio" in res_inspect.stdout
         assert "add" in res_inspect.stdout
 
@@ -123,7 +123,7 @@ def test_cli_list_inspect_success() -> None:
         assert "Tool: add" in res_inspect_tool.stdout
         assert "Parameters:" in res_inspect_tool.stdout
         assert "Input Schema:" in res_inspect_tool.stdout
-        
+
         # Verify JSON schema is valid in output
         lines = res_inspect_tool.stdout.split("\n")
         schema_start = lines.index("Input Schema:") + 1
@@ -147,4 +147,4 @@ def test_cli_invalid_project() -> None:
 
         res_list = run_cli(["list", "--file", bad_server])
         assert res_list.returncode != 0
-        assert "Error: No MCPServer instance found" in res_list.stderr
+        assert "does not define a ToolForge MCPServer named 'server'" in res_list.stderr
