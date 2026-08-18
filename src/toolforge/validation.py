@@ -170,3 +170,60 @@ def validate_tool_arguments(tool: Any, arguments: dict[str, Any]) -> dict[str, A
             validated[name] = _validate_type(val, param.annotation, name, tool.name)
 
     return validated
+
+
+def _coerce_prompt_type(val: Any, ann: Any) -> Any:
+    """Attempt to coerce string values into correct types for prompt parameters."""
+    if isinstance(val, str):
+        if ann is int:
+            try:
+                return int(val)
+            except ValueError:
+                pass
+        elif ann is float:
+            try:
+                return float(val)
+            except ValueError:
+                pass
+        elif ann is bool:
+            if val.lower() == "true":
+                return True
+            if val.lower() == "false":
+                return False
+
+        # Support unions (e.g. Union[int, str], int | None)
+        origin = getattr(ann, "__origin__", None)
+        if origin is typing.Union or (
+            hasattr(types, "UnionType") and isinstance(ann, types.UnionType)
+        ):
+            for arg in typing.get_args(ann):
+                coerced = _coerce_prompt_type(val, arg)
+                if coerced is not val:
+                    return coerced
+    return val
+
+
+def validate_prompt_arguments(prompt: Any, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Validate and normalize incoming arguments against a Prompt's parameters."""
+    validated: dict[str, Any] = {}
+
+    # 1. Reject unexpected parameters
+    for k in arguments:
+        if k not in prompt.parameters:
+            raise ToolValidationError(f"Prompt '{prompt.name}': unexpected parameter '{k}'.")
+
+    # 2. Validate expected parameters
+    for name, param in prompt.parameters.items():
+        if name not in arguments:
+            if param.required:
+                raise ToolValidationError(
+                    f"Prompt '{prompt.name}': missing required parameter '{name}'."
+                )
+            else:
+                validated[name] = param.default
+        else:
+            val = arguments[name]
+            coerced_val = _coerce_prompt_type(val, param.annotation)
+            validated[name] = _validate_type(coerced_val, param.annotation, name, prompt.name)
+
+    return validated
