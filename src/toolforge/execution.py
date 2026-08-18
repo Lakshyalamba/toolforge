@@ -11,16 +11,15 @@ async def execute_tool(tool: Tool, arguments: dict[str, Any]) -> Any:
     If the underlying function is synchronous, it runs directly.
     If it is a coroutine, it is awaited.
     """
-    for param_name, param in tool.parameters.items():
-        if param.required and param_name not in arguments:
-            raise ToolExecutionError(
-                f"Missing required argument: '{param_name}' for tool '{tool.name}'."
-            )
+    from toolforge.validation import validate_tool_arguments
+
+    # Validate and normalize arguments
+    validated_args = validate_tool_arguments(tool, arguments)
 
     try:
         if inspect.iscoroutinefunction(tool.fn):
-            return await tool.fn(**arguments)
+            return await tool.fn(**validated_args)
         else:
-            return tool.fn(**arguments)
+            return tool.fn(**validated_args)
     except Exception as e:
         raise ToolExecutionError(f"Error executing tool '{tool.name}': {e}") from e

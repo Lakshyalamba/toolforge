@@ -26,3 +26,8 @@ class ToolExecutionError(ToolForgeError):
 class SchemaGenerationError(ToolForgeError):
     """Raised when generating schema for a tool fails."""
     pass
+
+
+class ToolValidationError(ToolForgeError):
+    """Raised when validating tool arguments fails."""
+    pass
