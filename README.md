@@ -72,6 +72,109 @@ Internally, ToolForge handles this registration seamlessly:
     ToolRegistry
 ```
 
+## Tool Metadata
+
+ToolForge supports both simple and configured registration styles for tools. This allows you to attach custom names, descriptions, tags, and generic metadata while keeping the decoration interface clean and backward compatible.
+
+### Simple Decorator Style
+
+By default, ToolForge infers the tool name from the Python function's name and the description from the docstring:
+
+```python
+@server.tool
+def add(a: int, b: int) -> int:
+    """Add two numbers."""
+    return a + b
+```
+
+### Configured Decorator Style
+
+To specify custom metadata, pass arguments directly to the `@server.tool(...)` decorator:
+
+```python
+@server.tool(
+    name="calculator",
+    description="Perform arithmetic calculations",
+    tags=["math", "utility"],
+    metadata={"version": "1.0.0"},
+)
+def calculate(expression: str) -> float:
+    """Original docstring is ignored in favor of custom description."""
+    ...
+```
+
+### Metadata Fields and Behaviors
+
+- **`name`** (str | None): Custom name exposed to MCP clients. It must be non-empty and match the regex `^[a-zA-Z_][a-zA-Z0-9_-]*$`. If not provided, it defaults to the Python function name. Note that the Python function name and MCP tool name can differ (the function remains callable locally by its original name).
+- **`description`** (str | None): Custom description. Takes precedence over the function's docstring. If both are missing, a fallback description (`"No description provided."`) is used. Empty custom descriptions are rejected.
+- **`tags`** (list[str] | None): Optional list of non-empty strings representing tool categories/tags. Duplicate tags are automatically deduplicated while preserving order.
+- **`metadata`** (dict[str, Any] | None): Optional dictionary of custom JSON-serializable key-value metadata. Core fields (such as `name`, `description`, `tags`, etc.) are restricted from being overridden in this dictionary.
+- **`input_schema`** & **`parameters`**: Automatically generated from the Python signature type annotations. Schema generation remains unaffected by custom metadata.
+
+### Tool Immutability
+
+Once a tool is registered, its core metadata (`fn`, `name`, `description`, `parameters`, `return_type`, `tags`, `metadata`) is protected against accidental modifications using read-only properties.
+
+---
+
+## Resources
+
+ToolForge supports exposing readable data/context through MCP Resources with a simple decorator-based API.
+
+### Difference Between Tools and Resources
+
+- **Tools**: AI models *request* the server to perform actions/operations (e.g. write to files, calculate values, send network requests).
+- **Resources**: AI models *query* the server to read information (e.g. configuration states, log entries, file contents).
+
+### Registering Resources
+
+To register a resource, use the `@server.resource(uri, ...)` decorator:
+
+```python
+@server.resource(
+    "config://app",
+    description="Application configuration parameters",
+    mime_type="application/json",
+)
+def app_config():
+    return {"name": "ToolForge", "version": "0.1.0"}
+```
+
+### Resource URI
+
+The URI serves as the unique identifier for the resource.
+- It must be a valid non-empty URI string containing a scheme and either a netloc or a path (e.g., `config://app`, `file:///path/to/doc`).
+- Duplicate URIs will raise `ResourceAlreadyRegisteredError`.
+
+### Resource Name and Description
+
+- **`name`** (str | None): Custom human-readable resource name. If not provided, it defaults to the Python function name.
+- **`description`** (str | None): Custom description of the resource. Takes precedence over the function docstring. If both are missing, defaults to `"No description provided."`.
+
+### MIME Type
+
+- **`mime_type`** (str | None): Optional MIME type of the returned content. If omitted and the resource returns a dictionary or list, it defaults to `application/json`. Otherwise, it remains unspecified.
+
+### Sync vs Async Resources
+
+Both synchronous and asynchronous resource handler callables are supported natively:
+
+```python
+@server.resource("log://active")
+async def read_logs():
+    return "Log file content..."
+```
+
+### Result Serialization
+
+Resources return contents mapped to the standard MCP model formats depending on the return type:
+- **`str`**: Mapped to `TextResourceContents` (retains text formatting).
+- **`dict` | `list`**: Automatically serialized to JSON and mapped to `TextResourceContents` (defaults to `application/json` mime type).
+- **`bytes`**: Base64 encoded and mapped to `BlobResourceContents` (binary format).
+- **Other types**: If the return type is not supported, `ResourceExecutionError` is raised.
+
+---
+
 > [!NOTE]
 > ToolForge is in early development. Standard Model Context Protocol (MCP) transport support (such as stdio JSON-RPC or Server-Sent Events) is upcoming. Currently, registration and tool introspection function locally.
 
@@ -308,6 +411,7 @@ from toolforge import MCPServer
 logger = logging.getLogger("my_app")
 server = MCPServer("my-server")
 
+
 # Asynchronous middleware
 @server.middleware
 async def custom_logger(context, next_callable):
@@ -382,6 +486,7 @@ You can register startup and shutdown lifecycle hooks on your MCPServer. These h
 async def db_init():
     logger.info("Initializing database...")
 
+
 @server.on_shutdown
 def db_cleanup():
     logger.info("Cleaning up connections...")
@@ -389,6 +494,116 @@ def db_cleanup():
 
 Startup and shutdown hooks support both synchronous and asynchronous functions and will be executed sequentially in the order of registration.
 
+---
+
+## Testing
+
+ToolForge provides a first-class in-process testing client, `MCPTestClient`, which allows developers to test their tools, resources, and prompts locally without running Claude, Cursor, ChatGPT, or an external MCP client.
+
+### Basic Usage
+
+The `MCPTestClient` operates directly against your `MCPServer` instance:
+
+```python
+from toolforge import MCPServer
+from toolforge.testing import MCPTestClient
+
+server = MCPServer("demo")
+
+
+@server.tool
+def add(a: int, b: int) -> int:
+    return a + b
+
+
+def test_add():
+    # Sync client usage
+    client = MCPTestClient(server)
+    result = client.call_tool("add", {"a": 10, "b": 20})
+    assert result == 30
+```
+
+### Lifecycle Hooks
+
+If your server configures startup or shutdown hooks, you can use the test client as a context manager to trigger them automatically:
+
+```python
+def test_lifecycle():
+    with MCPTestClient(server) as client:
+        # startup hooks have run
+        assert len(client.list_tools()) == 1
+    # shutdown hooks have run
+```
+
+For async tests, use the async context manager:
+
+```python
+async def test_lifecycle_async():
+    async with MCPTestClient(server) as client:
+        result = await client.call_tool_async("add", {"a": 1, "b": 2})
+        assert result == 3
+```
+
+### Testing Resources
+
+To list and read registered resources:
+
+```python
+def test_resources():
+    client = MCPTestClient(server)
+
+    # List resources
+    resources = client.list_resources()
+    assert len(resources) == 1
+    assert resources[0].uri == "config://app"
+
+    # Read resource
+    res_data = client.read_resource("config://app")
+    assert "ToolForge" in res_data.text
+    assert res_data.mime_type == "application/json"
+```
+
+### Testing Prompts
+
+To list and retrieve prompts:
+
+```python
+def test_prompts():
+    client = MCPTestClient(server)
+
+    # List prompts
+    prompts = client.list_prompts()
+    assert len(prompts) == 1
+    assert prompts[0].name == "explain"
+
+    # Get prompt
+    prompt_data = client.get_prompt("explain", {"topic": "MCP"})
+    assert len(prompt_data.messages) == 1
+    assert prompt_data.messages[0].content == "Explain MCP in simple terms."
+    assert prompt_data.messages[0].role == "user"
+```
+
+### Testing Middleware
+
+Middleware layers are executed automatically when invoking tools via the `MCPTestClient`, allowing you to assert that custom logging, timings, or authorization middleware behaves correctly:
+
+```python
+def test_middleware():
+    events = []
+
+    @server.middleware
+    def my_middleware(context, next_fn):
+        events.append("before")
+        res = next_fn()
+        events.append("after")
+        return res
+
+    client = MCPTestClient(server)
+    client.call_tool("add", {"a": 1, "b": 2})
+    assert events == ["before", "after"]
+```
+
+---
 
 ## Development Setup
 
