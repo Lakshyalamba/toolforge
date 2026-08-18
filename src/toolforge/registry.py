@@ -42,22 +42,91 @@ class Tool:
         fn: Callable[..., Any],
         name: str | None = None,
         description: str | None = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         if not callable(fn):
             raise ToolRegistrationError("Registered object must be a callable.")
 
-        self.fn = fn
-        self.name = name or fn.__name__
-        self.description = description or inspect.getdoc(fn) or ""
+        self._fn = fn
+
+        # Validate name
+        if name is not None:
+            if not isinstance(name, str):
+                raise ToolRegistrationError("Tool name must be a string.")
+            if not name.strip():
+                raise ToolRegistrationError("Tool name cannot be empty or whitespace-only.")
+            self._name = name.strip()
+        else:
+            self._name = fn.__name__
 
         # Validate name format (standard identifier conventions)
-        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_-]*$", self.name):
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_-]*$", self._name):
             raise ToolRegistrationError(
-                f"Invalid tool name: '{self.name}'. Must be alphanumeric, underscores, or hyphens."
+                f"Invalid tool name: '{self._name}'. Must be alphanumeric, underscores, or hyphens."
             )
 
+        # Validate description
+        if description is not None:
+            if not isinstance(description, str):
+                raise ToolRegistrationError("Custom description must be a string.")
+            if not description.strip():
+                raise ToolRegistrationError(
+                    "Custom description cannot be empty or whitespace-only."
+                )
+            self._description = description.strip()
+        else:
+            doc = inspect.getdoc(fn)
+            self._description = doc.strip() if doc else "No description provided."
+
+        # Validate and store tags
+        self._tags: list[str] = []
+        if tags is not None:
+            if not isinstance(tags, (list, tuple)):
+                raise ToolRegistrationError("Tags must be a list or tuple of strings.")
+            seen = set()
+            clean_tags = []
+            for tag in tags:
+                if not isinstance(tag, str) or not tag.strip():
+                    raise ToolRegistrationError("Each tag must be a non-empty string.")
+                t_stripped = tag.strip()
+                if t_stripped not in seen:
+                    seen.add(t_stripped)
+                    clean_tags.append(t_stripped)
+            self._tags = clean_tags
+
+        # Validate and store metadata
+        self._metadata: dict[str, Any] = {}
+        if metadata is not None:
+            if not isinstance(metadata, dict):
+                raise ToolRegistrationError("Metadata must be a dictionary.")
+            for key in metadata:
+                if not isinstance(key, str):
+                    raise ToolRegistrationError("Metadata keys must be strings.")
+                if key in {
+                    "name",
+                    "description",
+                    "tags",
+                    "parameters",
+                    "return_type",
+                    "input_schema",
+                    "fn",
+                }:
+                    raise ToolRegistrationError(
+                        f"Metadata key '{key}' conflicts with a core Tool field."
+                    )
+            import json
+
+            try:
+                json.dumps(metadata)
+            except (TypeError, ValueError) as e:
+                raise ToolRegistrationError(
+                    f"Metadata values must be JSON serializable: {e}"
+                ) from e
+            self._metadata = metadata
+
         # Introspect function parameters and return type
-        self.parameters: dict[str, ToolParameter] = {}
+        self._parameters: dict[str, ToolParameter] = {}
         try:
             sig = inspect.signature(fn)
             try:
@@ -76,7 +145,7 @@ class Tool:
             required = param.default is inspect.Parameter.empty
             default = inspect.Parameter.empty if required else param.default
 
-            self.parameters[param_name] = ToolParameter(
+            self._parameters[param_name] = ToolParameter(
                 name=param_name,
                 annotation=annotation,
                 default=default,
@@ -84,7 +153,35 @@ class Tool:
                 kind=param.kind,
             )
 
-        self.return_type = type_hints.get("return", sig.return_annotation)
+        self._return_type = type_hints.get("return", sig.return_annotation)
+
+    @property
+    def fn(self) -> Callable[..., Any]:
+        return self._fn
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def description(self) -> str:
+        return self._description
+
+    @property
+    def parameters(self) -> dict[str, ToolParameter]:
+        return self._parameters
+
+    @property
+    def return_type(self) -> Any:
+        return self._return_type
+
+    @property
+    def tags(self) -> list[str]:
+        return self._tags
+
+    @property
+    def metadata(self) -> dict[str, Any]:
+        return self._metadata
 
     @property
     def input_schema(self) -> dict[str, Any]:
