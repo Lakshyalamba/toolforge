@@ -17,6 +17,9 @@ dependencies = [
     "mcp>=2.0.0",
 ]
 
+[project.scripts]
+toolforge = "toolforge.cli.main:main"
+
 [project.urls]
 Homepage = "https://github.com/toolforge/toolforge"
 Repository = "https://github.com/toolforge/toolforge"
