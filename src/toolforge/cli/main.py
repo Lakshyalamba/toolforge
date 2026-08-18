@@ -53,7 +53,7 @@ def main() -> None:
     run_parser = subparsers.add_parser("run", help="Start the ToolForge MCP server.")
     run_parser.add_argument(
         "--file",
-        default="server.py",
+        default=None,
         help="Path to the python file containing the MCPServer instance. (default: server.py)",
     )
 
@@ -61,7 +61,7 @@ def main() -> None:
     list_parser = subparsers.add_parser("list", help="List registered tools locally.")
     list_parser.add_argument(
         "--file",
-        default="server.py",
+        default=None,
         help="Path to the python file containing the MCPServer instance. (default: server.py)",
     )
 
@@ -77,7 +77,7 @@ def main() -> None:
     )
     inspect_parser.add_argument(
         "--file",
-        default="server.py",
+        default=None,
         help="Path to the python file containing the MCPServer instance. (default: server.py)",
     )
 
