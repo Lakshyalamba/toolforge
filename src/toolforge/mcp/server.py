@@ -1,5 +1,7 @@
+import inspect
 import logging
 import sys
+from typing import Any
 
 import mcp.types as t
 from mcp.server.lowlevel import Server
@@ -20,13 +22,26 @@ logger.setLevel(logging.INFO)
 class MCPServerRunner:
     """Responsible for running a ToolForge registry over MCP Stdio transport."""
 
-    def __init__(self, server_name: str, registry: ToolRegistry) -> None:
+    def __init__(self, server_name: str, registry: ToolRegistry, server: Any = None) -> None:
         self.server_name = server_name
         self.registry = registry
-        self.adapter = MCPAdapter(self.registry)
+        self.server = server
+        self.adapter = MCPAdapter(self.registry, server=server)
 
     async def run_async(self) -> None:
         """Asynchronously start the stdio server."""
+        # 1. Run startup hooks
+        if self.server:
+            for hook in self.server.startup_hooks:
+                try:
+                    if inspect.iscoroutinefunction(hook):
+                        await hook()
+                    else:
+                        hook()
+                except Exception as e:
+                    logger.error(f"Error in startup hook '{hook.__name__}': {e}", exc_info=True)
+                    raise
+
         mcp_server = Server(self.server_name)
 
         # Register request handlers
@@ -44,16 +59,29 @@ class MCPServerRunner:
         init_options = InitializationOptions(
             server_name=self.server_name,
             server_version="0.1.0",
-            capabilities=t.ServerCapabilities(
-                tools=t.ToolsCapability(list_changed=False)
-            ),
+            capabilities=t.ServerCapabilities(tools=t.ToolsCapability(list_changed=False)),
         )
 
         logger.info(f"Starting MCP stdio transport loop for '{self.server_name}'...")
-        async with stdio_server() as (read_stream, write_stream):
-            await mcp_server.run(
-                read_stream,
-                write_stream,
-                initialization_options=init_options,
-                raise_exceptions=False,
-            )
+        try:
+            async with stdio_server() as (read_stream, write_stream):
+                await mcp_server.run(
+                    read_stream,
+                    write_stream,
+                    initialization_options=init_options,
+                    raise_exceptions=False,
+                )
+        finally:
+            # 2. Run shutdown hooks
+            if self.server:
+                for hook in self.server.shutdown_hooks:
+                    try:
+                        if inspect.iscoroutinefunction(hook):
+                            await hook()
+                        else:
+                            hook()
+                    except Exception as e:
+                        logger.error(
+                            f"Error in shutdown hook '{hook.__name__}': {e}",
+                            exc_info=True,
+                        )

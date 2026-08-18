@@ -5,7 +5,13 @@ import mcp.types as t
 from mcp.server.context import ServerRequestContext
 from mcp.shared.exceptions import MCPError
 
-from toolforge.errors import ToolExecutionError, ToolNotFoundError, ToolValidationError
+from toolforge.errors import (
+    ConfigurationError,
+    MiddlewareError,
+    ToolExecutionError,
+    ToolNotFoundError,
+    ToolValidationError,
+)
 from toolforge.execution import execute_tool
 from toolforge.registry import ToolRegistry
 
@@ -15,8 +21,9 @@ logger = logging.getLogger("toolforge.mcp")
 class MCPAdapter:
     """Adapts ToolForge ToolRegistry and tools to the MCP protocol server."""
 
-    def __init__(self, registry: ToolRegistry) -> None:
+    def __init__(self, registry: ToolRegistry, server: Any = None) -> None:
         self.registry = registry
+        self.server = server
 
     async def handle_list_tools(
         self,
@@ -50,15 +57,91 @@ class MCPAdapter:
             # 2. Extract arguments
             arguments = params.arguments or {}
 
-            # 3. Execute the tool
+            # 3. Execute the tool (wrapping with middlewares if configured)
             try:
-                result = await execute_tool(tf_tool, arguments)
+                if self.server and self.server.middlewares:
+                    import inspect
+                    import time
+
+                    from toolforge.middleware.context import MiddlewareContext
+                    from toolforge.middleware.manager import build_chain, is_async_callable
+
+                    context = MiddlewareContext(
+                        tool_name=tf_tool.name,
+                        tool=tf_tool,
+                        arguments=arguments,
+                        server=self.server,
+                    )
+
+                    called_next = False
+
+                    if inspect.iscoroutinefunction(tf_tool.fn):
+
+                        async def final_call() -> Any:
+                            nonlocal called_next
+                            called_next = True
+                            from toolforge.validation import validate_tool_arguments
+
+                            validated_args = validate_tool_arguments(tf_tool, context.arguments)
+
+                            try:
+                                return await tf_tool.fn(**validated_args)
+                            except Exception as inner_e:
+                                if not isinstance(
+                                    inner_e, (ToolValidationError, ToolExecutionError)
+                                ):
+                                    raise ToolExecutionError(
+                                        f"Error executing tool '{tf_tool.name}': {inner_e}"
+                                    ) from inner_e
+                                raise
+
+                    else:
+
+                        def final_call() -> Any:
+                            nonlocal called_next
+                            called_next = True
+                            from toolforge.validation import validate_tool_arguments
+
+                            validated_args = validate_tool_arguments(tf_tool, context.arguments)
+
+                            try:
+                                return tf_tool.fn(**validated_args)
+                            except Exception as inner_e:
+                                if not isinstance(
+                                    inner_e, (ToolValidationError, ToolExecutionError)
+                                ):
+                                    raise ToolExecutionError(
+                                        f"Error executing tool '{tf_tool.name}': {inner_e}"
+                                    ) from inner_e
+                                raise
+
+                    start_time = time.perf_counter()
+                    chain_callable = build_chain(self.server.middlewares, context, final_call)
+
+                    try:
+                        if inspect.iscoroutinefunction(chain_callable) or is_async_callable(
+                            chain_callable
+                        ):
+                            result = await chain_callable()
+                        else:
+                            result = chain_callable()
+                        context.duration = time.perf_counter() - start_time
+                    except Exception as e:
+                        context.duration = time.perf_counter() - start_time
+                        context.error = e
+                        if called_next and isinstance(e, (ToolValidationError, ToolExecutionError)):
+                            raise
+                        else:
+                            raise MiddlewareError(f"Middleware failed during execution: {e}") from e
+                else:
+                    result = await execute_tool(tf_tool, arguments)
+
             except ToolValidationError as e:
                 return t.CallToolResult(
                     content=[t.TextContent(type="text", text=str(e))],
                     is_error=True,
                 )
-            except ToolExecutionError as e:
+            except (ToolExecutionError, MiddlewareError, ConfigurationError) as e:
                 logger.error(f"Execution failed for tool '{params.name}': {e}", exc_info=True)
                 return t.CallToolResult(
                     content=[t.TextContent(type="text", text=str(e))],
