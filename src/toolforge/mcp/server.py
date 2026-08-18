@@ -55,11 +55,35 @@ class MCPServerRunner:
             t.CallToolRequestParams,
             self.adapter.handle_call_tool,
         )
+        mcp_server.add_request_handler(
+            "resources/list",
+            t.PaginatedRequestParams,
+            self.adapter.handle_list_resources,
+        )
+        mcp_server.add_request_handler(
+            "resources/read",
+            t.ReadResourceRequestParams,
+            self.adapter.handle_read_resource,
+        )
+        mcp_server.add_request_handler(
+            "prompts/list",
+            t.PaginatedRequestParams,
+            self.adapter.handle_list_prompts,
+        )
+        mcp_server.add_request_handler(
+            "prompts/get",
+            t.GetPromptRequestParams,
+            self.adapter.handle_get_prompt,
+        )
 
         init_options = InitializationOptions(
             server_name=self.server_name,
             server_version="0.1.0",
-            capabilities=t.ServerCapabilities(tools=t.ToolsCapability(list_changed=False)),
+            capabilities=t.ServerCapabilities(
+                tools=t.ToolsCapability(list_changed=False),
+                resources=t.ResourcesCapability(list_changed=False, subscribe=False),
+                prompts=t.PromptsCapability(list_changed=False),
+            ),
         )
 
         logger.info(f"Starting MCP stdio transport loop for '{self.server_name}'...")
