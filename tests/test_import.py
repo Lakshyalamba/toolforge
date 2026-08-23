@@ -2,9 +2,9 @@ def test_import_server() -> None:
     """Verify that MCPServer and base exceptions can be imported."""
     from mcptoolforge import (
         MCPServer,
+        MCPToolForgeError,
         SchemaGenerationError,
         ToolExecutionError,
-        MCPToolForgeError,
         ToolRegistrationError,
     )
 

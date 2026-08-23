@@ -9,9 +9,9 @@ import pytest
 from mcptoolforge import (
     EntrypointNotFoundError,
     InvalidConfigurationError,
+    MCPToolForgeConfig,
     Project,
     ProjectNotFoundError,
-    MCPToolForgeConfig,
     load_server_from_project,
 )
 

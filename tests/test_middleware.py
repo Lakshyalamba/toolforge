@@ -272,7 +272,9 @@ async def test_lifecycle_hooks() -> None:
 
     with (
         mock.patch("mcp.server.lowlevel.Server.run", new_callable=mock.AsyncMock),
-        mock.patch("mcptoolforge.mcp.server.stdio_server", new_callable=mock.MagicMock) as mock_stdio,
+        mock.patch(
+            "mcptoolforge.mcp.server.stdio_server", new_callable=mock.MagicMock
+        ) as mock_stdio,
     ):
         mock_stdio.return_value.__aenter__.return_value = ("read", "write")
         await runner.run_async()
