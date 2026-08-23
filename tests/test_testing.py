@@ -1,6 +1,6 @@
 import pytest
 
-from mcptoolforge import (
+from toolforge import (
     MCPServer,
     ResourceExecutionError,
     ResourceNotFoundError,
@@ -8,7 +8,7 @@ from mcptoolforge import (
     ToolNotFoundError,
     ToolValidationError,
 )
-from mcptoolforge.testing import MCPTestClient, MCPToolForgeTestingError
+from toolforge.testing import MCPTestClient, ToolForgeTestingError
 
 
 def test_test_client_creation_and_isolation() -> None:
@@ -109,7 +109,7 @@ def test_resource_operations() -> None:
 
     @server.resource("config://app", description="App Config")
     def config():
-        return {"name": "MCPToolForge"}
+        return {"name": "ToolForge"}
 
     @server.resource("data://text")
     def text():
@@ -134,7 +134,7 @@ def test_resource_operations() -> None:
     # read_resource (json dict)
     res_dict = client.read_resource("config://app")
     assert res_dict.uri == "config://app"
-    assert res_dict.text == '{"name": "MCPToolForge"}'
+    assert res_dict.text == '{"name": "ToolForge"}'
     assert res_dict.mime_type == "application/json"
     assert not res_dict.is_blob
 
@@ -224,8 +224,8 @@ async def test_async_operations() -> None:
     res_prompt = await client.get_prompt_async("code-review", {"language": "Go"})
     assert res_prompt.messages[0].content == "Review Go"
 
-    # Calling sync methods inside running loop should raise MCPToolForgeTestingError
-    with pytest.raises(MCPToolForgeTestingError):
+    # Calling sync methods inside running loop should raise ToolForgeTestingError
+    with pytest.raises(ToolForgeTestingError):
         client.call_tool("fetch", {"url": "http://example.com"})
 
 

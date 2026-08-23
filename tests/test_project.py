@@ -6,41 +6,41 @@ from pathlib import Path
 
 import pytest
 
-from mcptoolforge import (
+from toolforge import (
     EntrypointNotFoundError,
     InvalidConfigurationError,
-    MCPToolForgeConfig,
     Project,
     ProjectNotFoundError,
+    ToolForgeConfig,
     load_server_from_project,
 )
 
 
 def test_config_validation() -> None:
-    """Verify MCPToolForgeConfig validations."""
-    config = MCPToolForgeConfig(name="test")
+    """Verify ToolForgeConfig validations."""
+    config = ToolForgeConfig(name="test")
     assert config.name == "test"
     assert config.entrypoint == "server.py"
     assert config.transport == "stdio"
 
     # Missing name
     with pytest.raises(InvalidConfigurationError) as exc:
-        MCPToolForgeConfig(name="")
+        ToolForgeConfig(name="")
     assert "name" in str(exc.value)
 
     # Missing entrypoint
     with pytest.raises(InvalidConfigurationError) as exc:
-        MCPToolForgeConfig(name="test", entrypoint="")
+        ToolForgeConfig(name="test", entrypoint="")
     assert "entrypoint" in str(exc.value)
 
     # Non-python entrypoint
     with pytest.raises(InvalidConfigurationError) as exc:
-        MCPToolForgeConfig(name="test", entrypoint="server.txt")
+        ToolForgeConfig(name="test", entrypoint="server.txt")
     assert "not a Python file" in str(exc.value)
 
     # Unsupported transport
     with pytest.raises(InvalidConfigurationError) as exc:
-        MCPToolForgeConfig(name="test", transport="http")
+        ToolForgeConfig(name="test", transport="http")
     assert "Only 'stdio' is currently supported" in str(exc.value)
 
 
@@ -50,7 +50,7 @@ def test_project_discovery_valid() -> None:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
         pyproject.write_text(
-            '[tool.mcptoolforge]\nname = "test-project"\nentrypoint = "custom_server.py"\n'
+            '[tool.toolforge]\nname = "test-project"\nentrypoint = "custom_server.py"\n'
         )
 
         project = Project.discover(start_dir=root)
@@ -71,14 +71,14 @@ def test_project_discovery_missing_toml() -> None:
 
 
 def test_project_discovery_missing_section() -> None:
-    """Verify discover raises error if [tool.mcptoolforge] section is missing."""
+    """Verify discover raises error if [tool.toolforge] section is missing."""
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
         pyproject.write_text('[project]\nname = "other"\n')
         with pytest.raises(ProjectNotFoundError) as exc:
             Project.discover(start_dir=root)
-        assert "[tool.mcptoolforge]" in str(exc.value)
+        assert "[tool.toolforge]" in str(exc.value)
 
 
 def test_project_discovery_missing_name() -> None:
@@ -86,7 +86,7 @@ def test_project_discovery_missing_name() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nentrypoint = "server.py"\n')
+        pyproject.write_text('[tool.toolforge]\nentrypoint = "server.py"\n')
         with pytest.raises(InvalidConfigurationError) as exc:
             Project.discover(start_dir=root)
         assert "field 'name' is missing" in str(exc.value)
@@ -97,7 +97,7 @@ def test_project_discovery_nested() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "nested-test"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "nested-test"\n')
 
         nested = root / "src" / "cli"
         nested.mkdir(parents=True)
@@ -113,11 +113,11 @@ def test_load_server_valid() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "test"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "test"\n')
 
         server_py = root / "server.py"
         server_py.write_text(
-            "from mcptoolforge import MCPServer\n"
+            "from toolforge import MCPServer\n"
             'server = MCPServer("nested-server")\n'
             "@server.tool\n"
             "def add(a: int) -> int: return a\n"
@@ -134,7 +134,7 @@ def test_load_server_missing_file() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "test"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "test"\n')
 
         project = Project.discover(start_dir=root)
         with pytest.raises(EntrypointNotFoundError) as exc:
@@ -147,17 +147,17 @@ def test_load_server_missing_server_variable() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "test"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "test"\n')
 
         server_py = root / "server.py"
         server_py.write_text(
-            'from mcptoolforge import MCPServer\nmy_custom_server = MCPServer("no-server-var")\n'
+            'from toolforge import MCPServer\nmy_custom_server = MCPServer("no-server-var")\n'
         )
 
         project = Project.discover(start_dir=root)
         with pytest.raises(InvalidConfigurationError) as exc:
             load_server_from_project(project)
-        assert "does not define a MCPToolForge MCPServer named 'server'" in str(exc.value)
+        assert "does not define a ToolForge MCPServer named 'server'" in str(exc.value)
 
 
 def test_load_server_invalid_object() -> None:
@@ -165,7 +165,7 @@ def test_load_server_invalid_object() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "test"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "test"\n')
 
         server_py = root / "server.py"
         server_py.write_text('server = "not-an-mcp-server-instance"\n')
@@ -173,7 +173,7 @@ def test_load_server_invalid_object() -> None:
         project = Project.discover(start_dir=root)
         with pytest.raises(InvalidConfigurationError) as exc:
             load_server_from_project(project)
-        assert "does not define a MCPToolForge MCPServer named 'server'" in str(exc.value)
+        assert "does not define a ToolForge MCPServer named 'server'" in str(exc.value)
 
 
 def test_load_server_multiple_objects_without_server() -> None:
@@ -183,11 +183,11 @@ def test_load_server_multiple_objects_without_server() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "test"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "test"\n')
 
         server_py = root / "server.py"
         server_py.write_text(
-            "from mcptoolforge import MCPServer\n"
+            "from toolforge import MCPServer\n"
             'server1 = MCPServer("s1")\n'
             'server2 = MCPServer("s2")\n'
         )
@@ -199,7 +199,7 @@ def test_load_server_multiple_objects_without_server() -> None:
 
 
 def run_cli_cmd(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
-    cmd = [sys.executable, "-m", "mcptoolforge.cli.main", *args]
+    cmd = [sys.executable, "-m", "toolforge.cli.main", *args]
     return subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
 
 
@@ -208,11 +208,11 @@ def test_cli_list_using_config() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "test"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "test"\n')
 
         server_py = root / "server.py"
         server_py.write_text(
-            "from mcptoolforge import MCPServer\n"
+            "from toolforge import MCPServer\n"
             'server = MCPServer("my-mcp")\n'
             "@server.tool\n"
             "def add(a: int, b: int) -> int:\n"
@@ -222,7 +222,7 @@ def test_cli_list_using_config() -> None:
 
         res = run_cli_cmd(["list"], cwd=root)
         assert res.returncode == 0
-        assert "MCPToolForge Server: my-mcp" in res.stdout
+        assert "ToolForge Server: my-mcp" in res.stdout
         assert "add" in res.stdout
 
 
@@ -232,7 +232,7 @@ def test_cli_inspect_using_config() -> None:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
         pyproject.write_text(
-            "[tool.mcptoolforge]\n"
+            "[tool.toolforge]\n"
             'name = "my-configured-project"\n'
             'entrypoint = "server.py"\n'
             'transport = "stdio"\n'
@@ -240,7 +240,7 @@ def test_cli_inspect_using_config() -> None:
 
         server_py = root / "server.py"
         server_py.write_text(
-            "from mcptoolforge import MCPServer\n"
+            "from toolforge import MCPServer\n"
             'server = MCPServer("my-mcp")\n'
             "@server.tool\n"
             "def add(a: int, b: int) -> int: return a + b\n"
@@ -248,7 +248,7 @@ def test_cli_inspect_using_config() -> None:
 
         res = run_cli_cmd(["inspect"], cwd=root)
         assert res.returncode == 0
-        assert "MCPToolForge Project" in res.stdout
+        assert "ToolForge Project" in res.stdout
         assert "Name: my-configured-project" in res.stdout
         assert "Root:" in res.stdout
         assert "Entrypoint: server.py" in res.stdout
@@ -260,11 +260,11 @@ def test_cli_inspect_specific_tool_using_config() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "test"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "test"\n')
 
         server_py = root / "server.py"
         server_py.write_text(
-            "from mcptoolforge import MCPServer\n"
+            "from toolforge import MCPServer\n"
             'server = MCPServer("my-mcp")\n'
             "@server.tool\n"
             "def add(a: int, b: int) -> int: return a + b\n"
@@ -285,7 +285,7 @@ def test_cli_inspect_specific_tool_using_config() -> None:
 
 
 def test_cli_init_generates_correct_config() -> None:
-    """Verify init subcommand generates [tool.mcptoolforge] properties."""
+    """Verify init subcommand generates [tool.toolforge] properties."""
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         res = run_cli_cmd(["init", "test-project"], cwd=root)
@@ -295,7 +295,7 @@ def test_cli_init_generates_correct_config() -> None:
         assert pyproject.is_file()
 
         content = pyproject.read_text()
-        assert "[tool.mcptoolforge]" in content
+        assert "[tool.toolforge]" in content
         assert 'name = "test-project"' in content
         assert 'entrypoint = "server.py"' in content
         assert 'transport = "stdio"' in content
@@ -306,25 +306,25 @@ def test_cli_override_precedence() -> None:
     with tempfile.TemporaryDirectory() as tmpdir:
         root = Path(tmpdir).resolve()
         pyproject = root / "pyproject.toml"
-        pyproject.write_text('[tool.mcptoolforge]\nname = "configured"\nentrypoint = "server.py"\n')
+        pyproject.write_text('[tool.toolforge]\nname = "configured"\nentrypoint = "server.py"\n')
 
         # Create two server files
         server_py = root / "server.py"
         server_py.write_text(
-            'from mcptoolforge import MCPServer\nserver = MCPServer("configured-server")\n'
+            'from toolforge import MCPServer\nserver = MCPServer("configured-server")\n'
         )
 
         other_py = root / "other.py"
         other_py.write_text(
-            'from mcptoolforge import MCPServer\nserver = MCPServer("overridden-server")\n'
+            'from toolforge import MCPServer\nserver = MCPServer("overridden-server")\n'
         )
 
         # List without override -> uses configured entrypoint (server.py)
         res1 = run_cli_cmd(["list"], cwd=root)
         assert res1.returncode == 0
-        assert "MCPToolForge Server: configured-server" in res1.stdout
+        assert "ToolForge Server: configured-server" in res1.stdout
 
         # List with override -> uses CLI --file argument (other.py)
         res2 = run_cli_cmd(["list", "--file", "other.py"], cwd=root)
         assert res2.returncode == 0
-        assert "MCPToolForge Server: overridden-server" in res2.stdout
+        assert "ToolForge Server: overridden-server" in res2.stdout

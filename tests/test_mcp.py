@@ -3,8 +3,8 @@ import mcp.types as t
 import pytest
 from mcp.shared.exceptions import MCPError
 
-from mcptoolforge import MCPServer
-from mcptoolforge.mcp.adapter import MCPAdapter
+from toolforge import MCPServer
+from toolforge.mcp.adapter import MCPAdapter
 
 
 def test_mcp_adapter_mapping_and_errors() -> None:

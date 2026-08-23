@@ -4,15 +4,15 @@ import unittest.mock as mock
 import mcp.types as t
 import pytest
 
-from mcptoolforge import (
+from toolforge import (
     MCPServer,
     logging_middleware,
     sync_logging_middleware,
     sync_timing_middleware,
     timing_middleware,
 )
-from mcptoolforge.mcp.adapter import MCPAdapter
-from mcptoolforge.mcp.server import MCPServerRunner
+from toolforge.mcp.adapter import MCPAdapter
+from toolforge.mcp.server import MCPServerRunner
 
 
 class DummyContext:
@@ -272,9 +272,7 @@ async def test_lifecycle_hooks() -> None:
 
     with (
         mock.patch("mcp.server.lowlevel.Server.run", new_callable=mock.AsyncMock),
-        mock.patch(
-            "mcptoolforge.mcp.server.stdio_server", new_callable=mock.MagicMock
-        ) as mock_stdio,
+        mock.patch("toolforge.mcp.server.stdio_server", new_callable=mock.MagicMock) as mock_stdio,
     ):
         mock_stdio.return_value.__aenter__.return_value = ("read", "write")
         await runner.run_async()

@@ -6,8 +6,8 @@ import tempfile
 
 
 def run_cli(args: list[str]) -> subprocess.CompletedProcess:
-    """Helper to run the CLI using sys.executable -m mcptoolforge.cli.main."""
-    cmd = [sys.executable, "-m", "mcptoolforge.cli.main", *args]
+    """Helper to run the CLI using sys.executable -m toolforge.cli.main."""
+    cmd = [sys.executable, "-m", "toolforge.cli.main", *args]
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
@@ -15,7 +15,7 @@ def test_cli_help() -> None:
     """Verify --help outputs usage info and exits 0."""
     res = run_cli(["--help"])
     assert res.returncode == 0
-    assert "MCPToolForge" in res.stdout
+    assert "ToolForge" in res.stdout
     assert "init" in res.stdout
     assert "run" in res.stdout
     assert "list" in res.stdout
@@ -23,10 +23,10 @@ def test_cli_help() -> None:
 
 
 def test_cli_version() -> None:
-    """Verify --version outputs mcptoolforge and package version."""
+    """Verify --version outputs toolforge and package version."""
     res = run_cli(["--version"])
     assert res.returncode == 0
-    assert "mcptoolforge 0.1.0" in res.stdout or "mcptoolforge 0.1.0" in res.stderr
+    assert "toolforge 0.1.0" in res.stdout or "toolforge 0.1.0" in res.stderr
 
 
 def test_cli_init_new_dir() -> None:
@@ -35,7 +35,7 @@ def test_cli_init_new_dir() -> None:
         target = os.path.join(tmpdir, "my-server")
         res = run_cli(["init", target])
         assert res.returncode == 0
-        assert "Initialized MCPToolForge project" in res.stderr
+        assert "Initialized ToolForge project" in res.stderr
 
         # Check generated structure
         assert os.path.exists(os.path.join(target, "server.py"))
@@ -78,7 +78,7 @@ def test_cli_init_force() -> None:
 
         res = run_cli(["init", tmpdir, "--force"])
         assert res.returncode == 0
-        assert "Initialized MCPToolForge project" in res.stderr
+        assert "Initialized ToolForge project" in res.stderr
 
         # Verify the file was overwritten with template content
         with open(conflict_file) as f:
@@ -91,11 +91,11 @@ def test_cli_list_inspect_missing_server() -> None:
     """Verify list and inspect exit non-zero when target server file is missing."""
     res_list = run_cli(["list", "--file", "nonexistent_server.py"])
     assert res_list.returncode != 0
-    assert "MCPToolForge entrypoint 'nonexistent_server.py' was not found" in res_list.stderr
+    assert "ToolForge entrypoint 'nonexistent_server.py' was not found" in res_list.stderr
 
     res_inspect = run_cli(["inspect", "--file", "nonexistent_server.py"])
     assert res_inspect.returncode != 0
-    assert "MCPToolForge entrypoint 'nonexistent_server.py' was not found" in res_inspect.stderr
+    assert "ToolForge entrypoint 'nonexistent_server.py' was not found" in res_inspect.stderr
 
 
 def test_cli_list_inspect_success() -> None:
@@ -121,7 +121,7 @@ def test_cli_list_inspect_success() -> None:
         # 1. Test list
         res_list = run_cli(["list", "--file", server_py])
         assert res_list.returncode == 0
-        assert "MCPToolForge Server: " in res_list.stdout
+        assert "ToolForge Server: " in res_list.stdout
         assert "add" in res_list.stdout
         assert "config://app" in res_list.stdout
         assert "code-review" in res_list.stdout
@@ -129,7 +129,7 @@ def test_cli_list_inspect_success() -> None:
         # 2. Test inspect general
         res_inspect = run_cli(["inspect", "--file", server_py])
         assert res_inspect.returncode == 0
-        assert "MCPToolForge Project" in res_inspect.stdout
+        assert "ToolForge Project" in res_inspect.stdout
         assert "stdio" in res_inspect.stdout
         assert "add" in res_inspect.stdout
         assert "config://app" in res_inspect.stdout
@@ -176,4 +176,4 @@ def test_cli_invalid_project() -> None:
 
         res_list = run_cli(["list", "--file", bad_server])
         assert res_list.returncode != 0
-        assert "does not define a MCPToolForge MCPServer named 'server'" in res_list.stderr
+        assert "does not define a ToolForge MCPServer named 'server'" in res_list.stderr

@@ -10,23 +10,31 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [
-    { name = "MCPToolForge Contributors" }
+    { name = "ToolForge Contributors" }
 ]
 dependencies = [
     "anyio>=4.0",
     "mcp>=2.0.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "build>=1.0.0",
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+    "twine>=4.0.0",
+]
+
 [project.scripts]
-mcptoolforge = "mcptoolforge.cli.main:main"
+toolforge = "toolforge.cli.main:main"
 
 [project.urls]
-Homepage = "https://github.com/mcptoolforge/mcptoolforge"
-Repository = "https://github.com/mcptoolforge/mcptoolforge"
-Issues = "https://github.com/mcptoolforge/mcptoolforge/issues"
+Homepage = "https://github.com/Lakshyalamba/toolforge"
+Repository = "https://github.com/Lakshyalamba/toolforge"
+Issues = "https://github.com/Lakshyalamba/toolforge/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/mcptoolforge"]
+packages = ["src/toolforge"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"

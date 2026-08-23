@@ -1,5 +1,5 @@
-from mcptoolforge import MCPServer
-from mcptoolforge.testing import MCPTestClient
+from toolforge import MCPServer
+from toolforge.testing import MCPTestClient
 
 # Define the server to be tested
 server = MCPServer("demo")
@@ -13,7 +13,7 @@ def add(a: int, b: int) -> int:
 
 @server.resource("config://app", description="App configurations")
 def get_config():
-    return {"name": "MCPToolForge", "version": "0.1.0"}
+    return {"name": "ToolForge", "version": "0.1.0"}
 
 
 @server.prompt(name="explain")
@@ -40,7 +40,7 @@ def test_demo_server() -> None:
         assert resources[0].uri == "config://app"
 
         res_data = client.read_resource("config://app")
-        assert "MCPToolForge" in res_data.text
+        assert "ToolForge" in res_data.text
         assert res_data.mime_type == "application/json"
 
         # 3. Test Prompt listing and retrieval

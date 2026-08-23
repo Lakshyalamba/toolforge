@@ -1,4 +1,4 @@
-from mcptoolforge import MCPServer
+from toolforge import MCPServer
 
 server = MCPServer("prompt-demo")
 
