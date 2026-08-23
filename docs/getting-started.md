@@ -42,3 +42,6 @@ Or run via the built-in CLI:
 ```bash
 toolforge run my_server.py
 ```
+
+> [!TIP]
+> Make sure your virtual environment is active in the current terminal tab before executing commands.
