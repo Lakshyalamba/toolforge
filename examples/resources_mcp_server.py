@@ -1,6 +1,6 @@
 import sys
 
-from toolforge import MCPServer
+from mcptoolforge import MCPServer
 
 server = MCPServer("resource-demo")
 
@@ -18,7 +18,7 @@ def add(a: int, b: int) -> int:
 )
 def app_config():
     return {
-        "name": "ToolForge",
+        "name": "MCPToolForge",
         "environment": "development",
     }
 

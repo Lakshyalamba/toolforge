@@ -6,8 +6,8 @@ from mcp.server.lowlevel import Server
 from mcp.server.models import InitializationOptions
 from mcp.shared.exceptions import MCPError
 
-from toolforge import MCPServer
-from toolforge.mcp.server import MCPServerRunner
+from mcptoolforge import MCPServer
+from mcptoolforge.mcp.server import MCPServerRunner
 
 
 @pytest.mark.anyio
@@ -15,7 +15,7 @@ async def test_mcp_server_flow_verification() -> None:
     """Verify complete flow: client handshake, tool listing, calling, error handling."""
     server = MCPServer("test-integration-server")
 
-    # Define tools using actual ToolForge decorators
+    # Define tools using actual MCPToolForge decorators
     @server.tool
     def add(a: int, b: int) -> int:
         """Add two numbers."""

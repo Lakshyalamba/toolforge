@@ -6,8 +6,8 @@ from mcp.server.lowlevel import Server
 from mcp.server.models import InitializationOptions
 from mcp.shared.exceptions import MCPError
 
-from toolforge import MCPServer
-from toolforge.mcp.server import MCPServerRunner
+from mcptoolforge import MCPServer
+from mcptoolforge.mcp.server import MCPServerRunner
 
 
 @pytest.mark.anyio
@@ -17,7 +17,7 @@ async def test_mcp_resources_flow() -> None:
 
     @server.resource("config://app", description="App Config", mime_type="application/json")
     def app_config():
-        return {"name": "ToolForge", "version": "0.1.0"}
+        return {"name": "MCPToolForge", "version": "0.1.0"}
 
     @server.resource("data://text")
     def text_resource():
@@ -92,7 +92,7 @@ async def test_mcp_resources_flow() -> None:
             content = read_json.contents[0]
             assert content.uri == "config://app"
             assert content.mime_type == "application/json"
-            assert "ToolForge" in content.text
+            assert "MCPToolForge" in content.text
 
             # E. Read valid text resource
             read_text = await session.read_resource("data://text")

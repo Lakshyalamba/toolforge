@@ -1,14 +1,14 @@
 import pytest
 
-from toolforge import (
+from mcptoolforge import (
     MCPServer,
     ToolAlreadyRegisteredError,
     ToolNotFoundError,
     ToolRegistrationError,
     ToolValidationError,
 )
-from toolforge.prompts import Prompt, PromptRegistry
-from toolforge.validation import validate_prompt_arguments
+from mcptoolforge.prompts import Prompt, PromptRegistry
+from mcptoolforge.validation import validate_prompt_arguments
 
 
 def test_prompt_registration_and_lookup() -> None:

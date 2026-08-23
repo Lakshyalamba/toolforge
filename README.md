@@ -1,4 +1,4 @@
-# ToolForge
+# MCPToolForge
 
 A developer-friendly Python framework for creating and exposing Model Context Protocol (MCP) tools with minimal boilerplate.
 
@@ -6,18 +6,18 @@ A developer-friendly Python framework for creating and exposing Model Context Pr
 
 **Active Development**
 
-ToolForge now supports exposing registered Python tools as Model Context Protocol (MCP) tools using the standard low-level `Server` over the process's standard input/output (stdio) streams. Network and SSE transports are planned for upcoming stages.
+MCPToolForge now supports exposing registered Python tools as Model Context Protocol (MCP) tools using the standard low-level `Server` over the process's standard input/output (stdio) streams. Network and SSE transports are planned for upcoming stages.
 
-## What ToolForge Solves
+## What MCPToolForge Solves
 
- Exposing Python code as tools for AI/LLM systems currently requires complex boilerplate code or manual JSON Schema definitions. ToolForge simplifies this by:
+ Exposing Python code as tools for AI/LLM systems currently requires complex boilerplate code or manual JSON Schema definitions. MCPToolForge simplifies this by:
 1. Inferring tool schemas automatically from Python function signatures and type annotations.
 2. Managing the registry, validation, and lifecycle of registered callables.
 3. Decoupling tool execution logic from specific transports.
 
 ## Planned Architecture
 
-ToolForge separates concerns into distinct modules:
+MCPToolForge separates concerns into distinct modules:
 - **`MCPServer`**: Core API server orchestration.
 - **`registry`**: Tracks and maps tools to callables.
 - **`schema`**: Automatically converts function signatures to JSON schemas.
@@ -27,13 +27,13 @@ ToolForge separates concerns into distinct modules:
 ## Installation
 
 ```bash
-pip install toolforge
+pip install mcptoolforge
 ```
 
 ## Basic Usage
 
 ```python
-from toolforge import MCPServer
+from mcptoolforge import MCPServer
 
 server = MCPServer("my-tools")
 
@@ -49,7 +49,7 @@ def add(a: int, b: int) -> int:
 To register a tool on an `MCPServer`, use the `@server.tool` decorator:
 
 ```python
-from toolforge import MCPServer
+from mcptoolforge import MCPServer
 
 server = MCPServer("demo")
 
@@ -60,7 +60,7 @@ def add(a: int, b: int) -> int:
     return a + b
 ```
 
-Internally, ToolForge handles this registration seamlessly:
+Internally, MCPToolForge handles this registration seamlessly:
 
 ```text
   Python function
@@ -74,11 +74,11 @@ Internally, ToolForge handles this registration seamlessly:
 
 ## Tool Metadata
 
-ToolForge supports both simple and configured registration styles for tools. This allows you to attach custom names, descriptions, tags, and generic metadata while keeping the decoration interface clean and backward compatible.
+MCPToolForge supports both simple and configured registration styles for tools. This allows you to attach custom names, descriptions, tags, and generic metadata while keeping the decoration interface clean and backward compatible.
 
 ### Simple Decorator Style
 
-By default, ToolForge infers the tool name from the Python function's name and the description from the docstring:
+By default, MCPToolForge infers the tool name from the Python function's name and the description from the docstring:
 
 ```python
 @server.tool
@@ -119,7 +119,7 @@ Once a tool is registered, its core metadata (`fn`, `name`, `description`, `para
 
 ## Resources
 
-ToolForge supports exposing readable data/context through MCP Resources with a simple decorator-based API.
+MCPToolForge supports exposing readable data/context through MCP Resources with a simple decorator-based API.
 
 ### Difference Between Tools and Resources
 
@@ -137,7 +137,7 @@ To register a resource, use the `@server.resource(uri, ...)` decorator:
     mime_type="application/json",
 )
 def app_config():
-    return {"name": "ToolForge", "version": "0.1.0"}
+    return {"name": "MCPToolForge", "version": "0.1.0"}
 ```
 
 ### Resource URI
@@ -176,11 +176,11 @@ Resources return contents mapped to the standard MCP model formats depending on 
 ---
 
 > [!NOTE]
-> ToolForge is in early development. Standard Model Context Protocol (MCP) transport support (such as stdio JSON-RPC or Server-Sent Events) is upcoming. Currently, registration and tool introspection function locally.
+> MCPToolForge is in early development. Standard Model Context Protocol (MCP) transport support (such as stdio JSON-RPC or Server-Sent Events) is upcoming. Currently, registration and tool introspection function locally.
 
 ## Automatic Schema Generation
 
-ToolForge automatically derives JSON Schema inputs from standard Python type annotations and default values. Developers do not need to write JSON schemas manually.
+MCPToolForge automatically derives JSON Schema inputs from standard Python type annotations and default values. Developers do not need to write JSON schemas manually.
 
 For example, given this tool:
 
@@ -191,7 +191,7 @@ def search(query: str, limit: int = 10):
     ...
 ```
 
-ToolForge dynamically generates the corresponding input schema:
+MCPToolForge dynamically generates the corresponding input schema:
 
 ```json
 {
@@ -213,7 +213,7 @@ This ensures full type safety and seamless integration with MCP clients out-of-t
 
 ## Runtime Validation
 
-ToolForge verifies incoming arguments against the generated tool schemas during execution. If invalid, missing, or unexpected arguments are supplied, the error is isolated and returned cleanly without crashing the server.
+MCPToolForge verifies incoming arguments against the generated tool schemas during execution. If invalid, missing, or unexpected arguments are supplied, the error is isolated and returned cleanly without crashing the server.
 
 ```text
   Tool registration
@@ -234,7 +234,7 @@ For example:
 
 ## MCP Server
 
-ToolForge handles the translation and registration of local Python callables as standard Model Context Protocol (MCP) tools:
+MCPToolForge handles the translation and registration of local Python callables as standard Model Context Protocol (MCP) tools:
 
 ```text
  @server.tool
@@ -250,7 +250,7 @@ ToolForge handles the translation and registration of local Python callables as 
 
 ### Run locally
 
-An example MCP server exposing `add` and `greet` tools is included at [basic_mcp_server.py](file:///Users/lakshyachoudhary/My%20Projects/toolforge/examples/basic_mcp_server.py).
+An example MCP server exposing `add` and `greet` tools is included at [basic_mcp_server.py](file:///Users/lakshyachoudhary/My%20Projects/mcptoolforge/examples/basic_mcp_server.py).
 
 To start this server over the standard input/output (STDIO) transport:
 
@@ -262,7 +262,7 @@ You can connect to this server using any standard MCP client or command-line ins
 
 ## End-to-End MCP Verification
 
-ToolForge's MCP implementation is verified end-to-end through automated integration tests that simulate a complete client-server conversation:
+MCPToolForge's MCP implementation is verified end-to-end through automated integration tests that simulate a complete client-server conversation:
 
 1. **MCP Initialization Handshake**: Establishes protocol compatibility and negotiates capabilities.
 2. **Tool Discovery (list_tools)**: Allows client to discover registered tools (`add`, `greet`, `failing_tool`, `get_info`), mapping schemas, types, and descriptions accurately.
@@ -278,27 +278,27 @@ python3 -m pytest tests/integration/test_mcp_server.py
 
 ## Command-Line Interface (CLI)
 
-ToolForge includes a developer-friendly command-line interface to create, run, and inspect servers with minimal setup:
+MCPToolForge includes a developer-friendly command-line interface to create, run, and inspect servers with minimal setup:
 
 ### Installation
 
 Ensure the package is installed:
 ```bash
-pip install toolforge
+pip install mcptoolforge
 ```
 
 ### Usage and Help
 
 To view all available commands:
 ```bash
-toolforge --help
+mcptoolforge --help
 ```
 
 ### Initialize a Project
 
 Create a new working MCP server template in a specified directory:
 ```bash
-toolforge init my-server
+mcptoolforge init my-server
 ```
 This generates the following folder structure:
 ```text
@@ -314,38 +314,38 @@ my-server/
 
 Display all registered tools on a server file without starting the transport loops:
 ```bash
-toolforge list --file server.py
+mcptoolforge list --file server.py
 ```
 
 ### Inspect Server and Tool Schemas
 
 Inspect general server details:
 ```bash
-toolforge inspect --file server.py
+mcptoolforge inspect --file server.py
 ```
 
 Inspect details and input schemas of a specific tool:
 ```bash
-toolforge inspect add --file server.py
+mcptoolforge inspect add --file server.py
 ```
 
 ### Run Server
 
 Start the MCP transport loops for standard input/output (STDIO) transport:
 ```bash
-toolforge run --file server.py
+mcptoolforge run --file server.py
 ```
 
 ## Configuration
 
-ToolForge projects are configured inside the project's standard `pyproject.toml` file under the `[tool.toolforge]` section. This enables automatic project discovery and streamlines development.
+MCPToolForge projects are configured inside the project's standard `pyproject.toml` file under the `[tool.mcptoolforge]` section. This enables automatic project discovery and streamlines development.
 
 ### Configuration Format
 
 Here is an example configuration block:
 
 ```toml
-[tool.toolforge]
+[tool.mcptoolforge]
 name = "my-server"
 entrypoint = "server.py"
 transport = "stdio"
@@ -359,23 +359,23 @@ transport = "stdio"
 
 ### Project Discovery & Resolving Root
 
-When you run commands like `toolforge run`, `toolforge list`, or `toolforge inspect` without passing an explicit `--file` argument:
-1. ToolForge starts search from the current working directory (`Path.cwd()`).
-2. It climbs up parent directories looking for a `pyproject.toml` containing a `[tool.toolforge]` section.
+When you run commands like `mcptoolforge run`, `mcptoolforge list`, or `mcptoolforge inspect` without passing an explicit `--file` argument:
+1. MCPToolForge starts search from the current working directory (`Path.cwd()`).
+2. It climbs up parent directories looking for a `pyproject.toml` containing a `[tool.mcptoolforge]` section.
 3. The directory containing `pyproject.toml` is resolved as the **Project Root**. All relative paths (e.g., `entrypoint`) are resolved relative to this root.
 
 ### Entrypoint & Naming Convention
 
-When loading the entrypoint module, ToolForge looks for a variable named **`server`** that is an instance of `MCPServer`.
+When loading the entrypoint module, MCPToolForge looks for a variable named **`server`** that is an instance of `MCPServer`.
 - If the variable `server` is missing, or if it is not an instance of `MCPServer`, an error is raised.
-- If multiple `MCPServer` instances exist in the entrypoint file and none is named `server`, ToolForge raises an ambiguity error.
+- If multiple `MCPServer` instances exist in the entrypoint file and none is named `server`, MCPToolForge raises an ambiguity error.
 
 ### CLI Precedence & Overrides
 
-ToolForge resolves the server to load using the following order of precedence:
-1. Explicit CLI arguments (e.g., `toolforge run --file custom_server.py`)
+MCPToolForge resolves the server to load using the following order of precedence:
+1. Explicit CLI arguments (e.g., `mcptoolforge run --file custom_server.py`)
 2. Configuration values defined in `pyproject.toml`
-3. ToolForge defaults (`server.py` in current working directory)
+3. MCPToolForge defaults (`server.py` in current working directory)
 
 ### Simplified Workflow
 
@@ -383,22 +383,22 @@ With configuration and project discovery in place, you can run and inspect serve
 
 ```bash
 # 1. Initialize a new project (includes configuration automatically)
-toolforge init my-server
+mcptoolforge init my-server
 cd my-server
 
 # 2. Inspect the project details and tools
-toolforge inspect
+mcptoolforge inspect
 
 # 3. List the registered tools
-toolforge list
+mcptoolforge list
 
 # 4. Start the server using stdio transport
-toolforge run
+mcptoolforge run
 ```
 
 ## Middleware
 
-ToolForge supports a powerful middleware pipeline that allows you to run cross-cutting concerns (logging, timing, tracing, error handling) around tool execution without modifying your individual tools.
+MCPToolForge supports a powerful middleware pipeline that allows you to run cross-cutting concerns (logging, timing, tracing, error handling) around tool execution without modifying your individual tools.
 
 ### Defining Middleware
 
@@ -406,7 +406,7 @@ To define a middleware, use the `@server.middleware` decorator or register it pr
 
 ```python
 import logging
-from toolforge import MCPServer
+from mcptoolforge import MCPServer
 
 logger = logging.getLogger("my_app")
 server = MCPServer("my-server")
@@ -446,19 +446,19 @@ Middlewares execute in the order they are registered:
 
 ### Sync vs Async Middleware
 
-ToolForge supports both synchronous and asynchronous middlewares:
+MCPToolForge supports both synchronous and asynchronous middlewares:
 - **Async Middleware**: `async def middleware(context, next_callable): ...` — works with both sync and async tools.
 - **Sync Middleware**: `def middleware(context, next_callable): ...` — works with synchronous tools.
 - **Mixed Safety**: To prevent blocking or fragile event loop bridging, a synchronous middleware **cannot** wrap an asynchronous tool or another asynchronous middleware. Violations will raise a `ConfigurationError`.
 
 ### Built-in Middlewares
 
-ToolForge includes pre-packaged middlewares for common workflows:
+MCPToolForge includes pre-packaged middlewares for common workflows:
 - **Timing**: Measures and logs tool execution duration to stderr (`timing_middleware` for async pipelines, `sync_timing_middleware` for purely sync pipelines).
 - **Logging**: Traces tool parameters, entry, and exit statuses (`logging_middleware` for async pipelines, `sync_logging_middleware` for purely sync pipelines).
 
 ```python
-from toolforge import MCPServer, timing_middleware, logging_middleware
+from mcptoolforge import MCPServer, timing_middleware, logging_middleware
 
 server = MCPServer("demo")
 server.add_middleware(logging_middleware)
@@ -469,7 +469,7 @@ server.add_middleware(timing_middleware)
 
 The `MiddlewareContext` object provides the following attributes to inspect tool execution state:
 - `context.tool_name` (str): Name of the tool being executed.
-- `context.tool` (Tool): The registered ToolForge Tool object.
+- `context.tool` (Tool): The registered MCPToolForge Tool object.
 - `context.arguments` (dict): Mutatable inputs passed to the tool.
 - `context.server` (MCPServer): The active server instance.
 - `context.duration` (float | None): MONOTONIC execution time recorded by timing frameworks.
@@ -498,15 +498,15 @@ Startup and shutdown hooks support both synchronous and asynchronous functions a
 
 ## Testing
 
-ToolForge provides a first-class in-process testing client, `MCPTestClient`, which allows developers to test their tools, resources, and prompts locally without running Claude, Cursor, ChatGPT, or an external MCP client.
+MCPToolForge provides a first-class in-process testing client, `MCPTestClient`, which allows developers to test their tools, resources, and prompts locally without running Claude, Cursor, ChatGPT, or an external MCP client.
 
 ### Basic Usage
 
 The `MCPTestClient` operates directly against your `MCPServer` instance:
 
 ```python
-from toolforge import MCPServer
-from toolforge.testing import MCPTestClient
+from mcptoolforge import MCPServer
+from mcptoolforge.testing import MCPTestClient
 
 server = MCPServer("demo")
 
@@ -559,7 +559,7 @@ def test_resources():
 
     # Read resource
     res_data = client.read_resource("config://app")
-    assert "ToolForge" in res_data.text
+    assert "MCPToolForge" in res_data.text
     assert res_data.mime_type == "application/json"
 ```
 

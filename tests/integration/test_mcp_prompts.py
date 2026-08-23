@@ -6,8 +6,8 @@ from mcp.server.lowlevel import Server
 from mcp.server.models import InitializationOptions
 from mcp.shared.exceptions import MCPError
 
-from toolforge import MCPServer
-from toolforge.mcp.server import MCPServerRunner
+from mcptoolforge import MCPServer
+from mcptoolforge.mcp.server import MCPServerRunner
 
 
 @pytest.mark.anyio

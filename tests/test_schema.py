@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from toolforge import MCPServer, SchemaGenerationError
+from mcptoolforge import MCPServer, SchemaGenerationError
 
 
 def test_schema_primitive_types() -> None:

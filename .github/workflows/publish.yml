@@ -1,4 +1,4 @@
-name: Publish ToolForge to PyPI
+name: Publish MCPToolForge to PyPI
 
 on:
   release:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-and-publish:
-    name: Build and publish ToolForge
+    name: Build and publish MCPToolForge
     runs-on: ubuntu-latest
     environment: pypi
 

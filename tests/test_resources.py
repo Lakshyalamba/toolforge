@@ -1,12 +1,12 @@
 import pytest
 
-from toolforge import (
+from mcptoolforge import (
     MCPServer,
     ResourceAlreadyRegisteredError,
     ResourceNotFoundError,
     ResourceRegistrationError,
 )
-from toolforge.resources import Resource, ResourceRegistry
+from mcptoolforge.resources import Resource, ResourceRegistry
 
 
 def test_resource_registration_and_lookup() -> None:

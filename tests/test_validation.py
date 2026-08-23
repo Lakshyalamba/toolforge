@@ -2,9 +2,9 @@ import enum
 
 import pytest
 
-from toolforge import MCPServer, ToolExecutionError, ToolValidationError
-from toolforge.execution import execute_tool
-from toolforge.validation import validate_tool_arguments
+from mcptoolforge import MCPServer, ToolExecutionError, ToolValidationError
+from mcptoolforge.execution import execute_tool
+from mcptoolforge.validation import validate_tool_arguments
 
 
 class DummyEnum(enum.StrEnum):

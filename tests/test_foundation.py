@@ -2,7 +2,7 @@ import inspect
 
 import pytest
 
-from toolforge import (
+from mcptoolforge import (
     MCPServer,
     ToolAlreadyRegisteredError,
     ToolExecutionError,
@@ -10,8 +10,8 @@ from toolforge import (
     ToolRegistrationError,
     ToolValidationError,
 )
-from toolforge.execution import execute_tool
-from toolforge.registry import Tool, ToolRegistry
+from mcptoolforge.execution import execute_tool
+from mcptoolforge.registry import Tool, ToolRegistry
 
 
 def test_mcpserver_initialization() -> None:
@@ -237,7 +237,7 @@ def test_parameter_introspection_details() -> None:
 def test_mcpserver_run_setup() -> None:
     """Test MCPServer runner can be set up correctly."""
     server = MCPServer("test")
-    from toolforge.mcp.server import MCPServerRunner
+    from mcptoolforge.mcp.server import MCPServerRunner
 
     runner = MCPServerRunner(server.name, server.registry)
     assert runner.server_name == "test"

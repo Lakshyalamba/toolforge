@@ -1,6 +1,6 @@
 import sys
 
-from toolforge import MCPServer
+from mcptoolforge import MCPServer
 
 
 def main() -> None:

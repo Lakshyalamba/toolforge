@@ -1,13 +1,13 @@
 import mcp.types as t
 import pytest
 
-from toolforge import (
+from mcptoolforge import (
     MCPServer,
     ToolAlreadyRegisteredError,
     ToolNotFoundError,
     ToolRegistrationError,
 )
-from toolforge.mcp.adapter import MCPAdapter
+from mcptoolforge.mcp.adapter import MCPAdapter
 
 
 def test_simple_decorator() -> None:
