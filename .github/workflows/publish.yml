@@ -1,0 +1,65 @@
+name: Publish ToolForge to PyPI
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-publish:
+    name: Build and publish ToolForge
+    runs-on: ubuntu-latest
+    environment: pypi
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Clean build directory
+        run: |
+          rm -rf dist build *.egg-info
+
+      - name: Build package artifacts
+        run: |
+          python -m build
+
+      - name: Verify build artifacts
+        run: |
+          if [ ! -d dist ]; then
+            echo "Error: dist directory does not exist."
+            exit 1
+          fi
+          # Check for wheel
+          WHEEL_COUNT=$(find dist -maxdepth 1 -name "*.whl" | wc -l)
+          if [ "$WHEEL_COUNT" -eq 0 ]; then
+            echo "Error: No wheel artifact found in dist/."
+            exit 1
+          fi
+          # Check for source distribution
+          SDIST_COUNT=$(find dist -maxdepth 1 -name "*.tar.gz" | wc -l)
+          if [ "$SDIST_COUNT" -eq 0 ]; then
+            echo "Error: No source distribution found in dist/."
+            exit 1
+          fi
+          echo "Build artifacts verified successfully:"
+          ls -la dist/
+
+      - name: Validate metadata via Twine
+        run: |
+          twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
