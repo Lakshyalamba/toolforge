@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "toolforge"
+name = "mcptoolforge"
 version = "0.1.0"
 description = "A developer-friendly Python framework for creating and exposing MCP tools with minimal boilerplate"
 readme = "README.md"
