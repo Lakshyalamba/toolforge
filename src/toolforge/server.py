@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 
 from toolforge.decorators import ToolDecorator
 from toolforge.prompts import Prompt, PromptDecorator, PromptRegistry
@@ -65,6 +66,16 @@ class MCPServer:
     def list_tools(self) -> list[Tool]:
         """Return a list of all registered tools."""
         return self.registry.list()
+
+    def as_dspy_tools(
+        self,
+        trace: Any | None = None,
+        safety_gate: Any | None = None,
+    ) -> list[Any]:
+        """Convert all registered tools on this server into DSPy Tool instances."""
+        from toolforge.intelligence.tools import to_dspy_tools
+
+        return to_dspy_tools(self.tools, trace=trace, safety_gate=safety_gate)
 
     def get_resource(self, uri: str) -> Resource:
         """Retrieve a registered resource by URI."""

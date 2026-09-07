@@ -202,6 +202,22 @@ class Tool:
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.fn(*args, **kwargs)
 
+    def as_dspy_tool(
+        self,
+        trace: Any | None = None,
+        description: str | None = None,
+        safety_gate: Any | None = None,
+    ) -> Any:
+        """Convert this Tool into a DSPy Tool instance for agent tool-use."""
+        from toolforge.intelligence.tools import to_dspy_tool
+
+        return to_dspy_tool(
+            self,
+            trace=trace,
+            description=description,
+            safety_gate=safety_gate,
+        )
+
     def __repr__(self) -> str:
         return f"Tool(name={self.name!r}, description={self.description!r})"
 
