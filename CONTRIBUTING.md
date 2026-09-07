@@ -1,73 +1,132 @@
 # Contributing to MCPToolForge
 
-Thank you for your interest in contributing to MCPToolForge! We welcome all contributions, including bug fixes, feature requests, and documentation improvements.
+Thank you for contributing to MCPToolForge! This guide explains how to set up your environment, run tests, adhere to coding standards, add new mappers or generators, and submit Pull Requests.
 
 ---
 
-## Getting Started
+## Development Setup
 
-### 1. Fork and Clone
-Fork the repository on GitHub, and clone your fork locally:
+### 1. Fork & Clone
 ```bash
 git clone https://github.com/<your-username>/toolforge.git
 cd toolforge
 ```
 
-### 2. Set Up Virtual Environment
-Create and activate a virtual environment:
+### 2. Virtual Environment
+Create and activate a virtual environment (Python 3.11+ required):
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install Development Dependencies
-Install the package in editable mode with development dependencies:
+### 3. Install Editable Dependencies
+Install all core, development, and optional DSPy dependencies:
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[dev,dspy]"
 ```
 
 ---
 
-## Contribution Workflow
+## Running Tests & Quality Checks
 
-### 1. Create a Branch
-Always create a new branch for your work:
+### Run Unit & Integration Tests
 ```bash
-git checkout -b my-feature-branch
-```
-
-### 2. Make Changes & Write Tests
-Implement your changes. If you are adding a feature or fixing a bug, please write corresponding tests in the `tests/` directory to verify the behavior.
-
-### 3. Run the Test Suite
-Ensure all tests pass successfully before committing:
-```bash
+# Run complete test suite
 pytest
+
+# Run a specific test module
+pytest tests/test_dspy_mapper.py
+
+# Run with verbose output
+pytest -v
 ```
 
-### 4. Run Lint & Format Checks
-We use Ruff to maintain code quality and formatting. Run these checks to verify style compliance:
+### Code Formatting & Linting
+ToolForge enforces strict style using [Ruff](https://astral.sh/ruff):
 ```bash
 # Lint checks
 ruff check .
 
-# Formatting checks
+# Apply safe automatic fixes
+ruff check --fix .
+
+# Code formatting checks
 ruff format --check .
+
+# Auto-format files
+ruff format .
 ```
-
-### 5. Commit Changes
-We use **Conventional Commits** for automated release creation and changelog updates. Ensure your commit messages follow this format:
-- `feat: add resource template capability` (for new features)
-- `fix: correct validation type coercion logic` (for bug fixes)
-- `docs: update quick-start guide in README` (for documentation changes)
-- `chore: update dependencies` (for maintenance tasks)
-
-### 6. Submit a Pull Request
-Push your branch to GitHub and open a Pull Request (PR) against the `main` branch of the official repository.
 
 ---
 
-## Important Rules
-- **No Secrets**: Never commit API keys, credentials, or private configuration files.
-- **Keep PRs Focused**: Each Pull Request should address a single concern.
-- **Update Documentation**: If your PR modifies a public API, make sure the README or `docs/` files are updated accordingly.
+## Extending ToolForge
+
+### How to Add a New Mapper
+All mappers implement the `ToolMapper` abstract base class defined in `toolforge.intelligence.mapper.base`:
+
+```python
+from toolforge.intelligence.mapper.base import ToolMapper
+from toolforge.intelligence.models import ToolMappingResult
+from toolforge.registry import Tool
+
+
+class CustomToolMapper(ToolMapper):
+    """Custom mapper mapping tools to domain-specific metadata."""
+
+    def map_tool(self, tool: Tool) -> ToolMappingResult:
+        # Implement mapping logic: extract semantics or transform metadata
+        return ToolMappingResult(
+            name=tool.name,
+            original_description=tool.description,
+            effective_description=tool.description,
+            input_schema=tool.input_schema,
+            semantics=None,
+            is_enriched=False,
+            confidence=1.0,
+            mapping_source="custom",
+        )
+
+    def map_tools(self, tools: list[Tool]) -> list[ToolMappingResult]:
+        return [self.map_tool(t) for t in tools]
+
+    def resolve_ambiguity(
+        self, intent: str, candidate_tools: list[Tool]
+    ) -> tuple[Tool, float, str]:
+        # Disambiguate when multiple tools could handle an intent
+        return candidate_tools[0], 1.0, "Selected by custom rule."
+```
+
+Register your mapper in `toolforge.intelligence.mapper` and add unit tests under `tests/`.
+
+### How to Add a New Generator
+Generators transform registered `Tool` objects or `ToolMappingResult` instances into external formats (e.g. client SDK stubs, OpenAPI schemas, or agent definitions):
+
+1. Define a generator function or class in `toolforge.schema` or a new module under `toolforge.generators`.
+2. Accept a `Tool` or list of `Tool` / `ToolMappingResult` objects.
+3. Access `tool.name`, `tool.description`, `tool.input_schema`, and `tool.semantics` (if enriched).
+4. Return the generated schema dictionary or formatted code string.
+5. Provide tests verifying generation from standard tool definitions and edge-case parameter signatures.
+
+---
+
+## Submitting a Pull Request (PR)
+
+1. **Create a Branch**:
+   ```bash
+   git checkout -b feat/my-new-feature
+   ```
+2. **Follow Conventional Commits**:
+   - `feat: add support for streaming tools`
+   - `fix: resolve parameter coercion error for booleans`
+   - `docs: update configuration guide`
+   - `test: add benchmark runner edge-case tests`
+3. **Verify Checks**:
+   Ensure `pytest`, `ruff check .`, and `ruff format --check .` pass locally with 0 errors.
+4. **Push & Open PR**:
+   Push your branch and open a PR against `main`. Provide a clear description of changes, motivation, and test evidence.
+5. **No Secrets**: Never commit real API keys or private tokens.
+
+---
+
+## Need Help?
+Open an issue on [GitHub Issues](https://github.com/Lakshyalamba/toolforge/issues) to ask questions or propose design ideas before submitting large PRs.

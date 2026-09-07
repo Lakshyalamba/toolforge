@@ -2,25 +2,32 @@
 
 MCPToolForge is a developer-friendly Python framework for creating Model Context Protocol (MCP) servers with minimal boilerplate.
 
+---
+
 ## Installation
 
-Install the package via pip:
+Install core ToolForge:
 ```bash
 pip install mcptoolforge
 ```
 
+Or install with optional DSPy intelligence:
+```bash
+pip install "mcptoolforge[dspy]"
+```
+
+---
+
 ## Quick Start Example
 
-Here is how you can define an MCP server with a custom tool:
+Define an MCP server with a custom tool in `server.py`:
 
 ```python
 from toolforge import MCPServer
 
-# Create server instance
 server = MCPServer("my-server")
 
 
-# Register a custom tool
 @server.tool
 def add(a: int, b: int) -> int:
     """Add two numbers together."""
@@ -31,17 +38,26 @@ if __name__ == "__main__":
     server.run()
 ```
 
-## Run Locally
+---
 
-You can run your server script directly:
+## Running the Server
+
+Run your server script directly:
 ```bash
-python my_server.py
+python server.py
 ```
 
 Or run via the built-in CLI:
 ```bash
-toolforge run my_server.py
+toolforge run server.py
 ```
 
-> [!TIP]
-> Make sure your virtual environment is active in the current terminal tab before executing commands.
+---
+
+## Next Steps
+
+- [Configuration Reference](configuration.md)
+- [DSPy Intelligence Layer](dspy.md)
+- [Architecture & Pipelines](architecture.md)
+- [Testing Guide](testing.md)
+- [Contributing](contributing.md)
