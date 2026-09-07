@@ -10,33 +10,38 @@ permissions:
   contents: read
 
 jobs:
-  lint-and-format:
-    name: Lint & Format Check
+  lint-format-typecheck:
+    name: Code Quality (Lint, Format, Type Check)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev,dspy]"
 
-      - name: Run Ruff Format Check
+      - name: Check code formatting with Ruff
         run: |
           ruff format --check .
 
-      - name: Run Ruff Linter
+      - name: Lint codebase with Ruff
         run: |
           ruff check .
 
-  tests:
-    name: Tests (Python ${{ matrix.python-version }})
+      - name: Type check with Mypy
+        run: |
+          mypy src/toolforge
+
+  tests-with-dspy:
+    name: Tests (Python ${{ matrix.python-version }} with DSPy)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -50,37 +55,61 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: "pip"
 
-      - name: Install dependencies
+      - name: Install dependencies with DSPy
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install -e ".[dev,dspy]"
 
-      - name: Run tests with Pytest
+      - name: Run test suite with Pytest
         run: |
-          pytest
+          pytest --durations=10
 
-  build-check:
-    name: Package Build Check
+  tests-without-dspy:
+    name: Tests (Python 3.11 without DSPy)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install dependencies
+      - name: Install dependencies (Core & Dev only)
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
 
-      - name: Build package artifacts
+      - name: Run tests verifying clean fallback when DSPy is not installed
+        run: |
+          pytest
+
+  build-check:
+    name: Package Build & Metadata Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine hatchling
+
+      - name: Build sdist and wheel artifacts
         run: |
           python -m build
 
       - name: Verify package metadata with Twine
         run: |
-          twine check dist/*
+          twine check --strict dist/*
