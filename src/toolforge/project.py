@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import tomllib
 from pathlib import Path
+from typing import Any
 
 from toolforge.config import ToolForgeConfig
 from toolforge.errors import (
@@ -57,11 +58,38 @@ class Project:
                         f"from '[tool.toolforge]' in '{pyproject_file}'."
                     )
 
-                config = ToolForgeConfig(
-                    name=tf_section["name"],
-                    entrypoint=tf_section.get("entrypoint", "server.py"),
-                    transport=tf_section.get("transport", "stdio"),
-                )
+                # Extract optional dspy section
+                dspy_config = None
+                if "dspy" in tf_section:
+                    dspy_raw = tf_section["dspy"]
+                    if not isinstance(dspy_raw, dict):
+                        raise InvalidConfigurationError(
+                            "Section '[tool.toolforge.dspy]' in "
+                            f"'{pyproject_file}' must be a table/dictionary."
+                        )
+
+                    # Security check: disallow secret keys in pyproject.toml
+                    prohibited_substrings = ("api_key", "secret", "token")
+                    for k in dspy_raw:
+                        lower_k = k.lower()
+                        if any(sub in lower_k for sub in prohibited_substrings):
+                            raise InvalidConfigurationError(
+                                f"Do not store API keys or secrets ('{k}') in pyproject.toml. "
+                                "Use standard environment variables instead "
+                                "(e.g. OPENAI_API_KEY, ANTHROPIC_API_KEY)."
+                            )
+
+                    dspy_config = dspy_raw
+
+                config_kwargs: dict[str, Any] = {
+                    "name": tf_section["name"],
+                    "entrypoint": tf_section.get("entrypoint", "server.py"),
+                    "transport": tf_section.get("transport", "stdio"),
+                }
+                if dspy_config is not None:
+                    config_kwargs["dspy"] = dspy_config
+
+                config = ToolForgeConfig(**config_kwargs)
 
                 return cls(
                     root=current,

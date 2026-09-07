@@ -328,3 +328,136 @@ def test_cli_override_precedence() -> None:
         res2 = run_cli_cmd(["list", "--file", "other.py"], cwd=root)
         assert res2.returncode == 0
         assert "ToolForge Server: overridden-server" in res2.stdout
+
+
+def test_dspy_config_defaults() -> None:
+    """Verify DSPyConfig defaults."""
+    from toolforge.config import DSPyConfig
+
+    cfg = DSPyConfig()
+    assert cfg.enabled is False
+    assert cfg.model is None
+    assert cfg.temperature == 0.0
+    assert cfg.confidence_threshold == 0.6
+    assert cfg.compiled_program_path is None
+    assert cfg.optimization.enabled is False
+    assert cfg.optimization.cache_dir == ".toolforge/intelligence"
+
+
+def test_dspy_config_validations() -> None:
+    """Verify DSPyConfig raises InvalidConfigurationError on invalid values."""
+    from toolforge.config import DSPyConfig, DSPyOptimizationConfig
+
+    # 1. Invalid enabled type
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.enabled.*boolean"):
+        DSPyConfig(enabled="true")  # type: ignore[arg-type]
+
+    # 2. Invalid model type or empty
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.model.*string"):
+        DSPyConfig(model="")
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.model.*string"):
+        DSPyConfig(model=123)  # type: ignore[arg-type]
+
+    # 3. Invalid temperature
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.temperature.*number"):
+        DSPyConfig(temperature="hot")  # type: ignore[arg-type]
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.temperature.*number"):
+        DSPyConfig(temperature=True)  # type: ignore[arg-type]
+    with pytest.raises(InvalidConfigurationError, match=r"between 0.0 and 2.0"):
+        DSPyConfig(temperature=-0.1)
+    with pytest.raises(InvalidConfigurationError, match=r"between 0.0 and 2.0"):
+        DSPyConfig(temperature=2.1)
+
+    # 4. Invalid confidence_threshold
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.confidence_threshold.*number"):
+        DSPyConfig(confidence_threshold="high")  # type: ignore[arg-type]
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.confidence_threshold.*number"):
+        DSPyConfig(confidence_threshold=False)  # type: ignore[arg-type]
+    with pytest.raises(InvalidConfigurationError, match=r"between 0.0 and 1.0"):
+        DSPyConfig(confidence_threshold=-0.01)
+    with pytest.raises(InvalidConfigurationError, match=r"between 0.0 and 1.0"):
+        DSPyConfig(confidence_threshold=1.01)
+
+    # 5. Invalid compiled_program_path
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.compiled_program_path.*string"):
+        DSPyConfig(compiled_program_path="")
+
+    # 6. Invalid optimization sub-table
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.optimization"):
+        DSPyConfig(optimization="invalid")  # type: ignore[arg-type]
+
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.optimization.enabled.*boolean"):
+        DSPyOptimizationConfig(enabled="yes")  # type: ignore[arg-type]
+
+    with pytest.raises(InvalidConfigurationError, match=r"dspy.optimization.cache_dir.*string"):
+        DSPyOptimizationConfig(cache_dir="")
+
+
+def test_project_discovery_dspy_valid() -> None:
+    """Verify pyproject.toml parsing of [tool.toolforge.dspy] and optimization tables."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir).resolve()
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            "[tool.toolforge]\n"
+            'name = "ai-project"\n'
+            'entrypoint = "server.py"\n'
+            "\n"
+            "[tool.toolforge.dspy]\n"
+            "enabled = true\n"
+            'model = "openai/gpt-4o-mini"\n'
+            "temperature = 0.3\n"
+            "confidence_threshold = 0.8\n"
+            'compiled_program_path = "models/optimized.json"\n'
+            "\n"
+            "[tool.toolforge.dspy.optimization]\n"
+            "enabled = true\n"
+            'cache_dir = ".custom_cache"\n'
+        )
+
+        project = Project.discover(start_dir=root)
+        assert project.config.name == "ai-project"
+        assert project.config.dspy.enabled is True
+        assert project.config.dspy.model == "openai/gpt-4o-mini"
+        assert project.config.dspy.temperature == 0.3
+        assert project.config.dspy.confidence_threshold == 0.8
+        assert project.config.dspy.compiled_program_path == "models/optimized.json"
+        assert project.config.dspy.optimization.enabled is True
+        assert project.config.dspy.optimization.cache_dir == ".custom_cache"
+
+
+def test_project_discovery_dspy_rejects_api_keys() -> None:
+    """Verify pyproject.toml rejects attempts to store API keys and secrets."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir).resolve()
+        pyproject = root / "pyproject.toml"
+        pyproject.write_text(
+            "[tool.toolforge]\n"
+            'name = "leaky-project"\n'
+            "\n"
+            "[tool.toolforge.dspy]\n"
+            "enabled = true\n"
+            'api_key = "sk-123456789"\n'
+        )
+
+        with pytest.raises(InvalidConfigurationError, match="Do not store API keys or secrets"):
+            Project.discover(start_dir=root)
+
+
+def test_toolforge_config_create_mapper() -> None:
+    """Verify ToolForgeConfig.create_mapper returns appropriate mapper based on dspy.enabled."""
+    from toolforge.intelligence import DSPyToolMapper, StaticToolMapper
+
+    # 1. Disabled (default)
+    config_disabled = ToolForgeConfig(name="test")
+    mapper_disabled = config_disabled.create_mapper()
+    assert isinstance(mapper_disabled, StaticToolMapper)
+
+    # 2. Enabled
+    config_enabled = ToolForgeConfig(
+        name="test",
+        dspy={"enabled": True, "confidence_threshold": 0.85},  # type: ignore[arg-type]
+    )
+    mapper_enabled = config_enabled.create_mapper()
+    assert isinstance(mapper_enabled, DSPyToolMapper)
+    assert mapper_enabled.confidence_threshold == 0.85
