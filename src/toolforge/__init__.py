@@ -17,6 +17,11 @@ from toolforge.errors import (
     ToolRegistrationError,
     ToolValidationError,
 )
+from toolforge.intelligence import (
+    DSPyToolMapper,
+    StaticToolMapper,
+    ToolMapper,
+)
 from toolforge.middleware import (
     MiddlewareContext,
     logging_middleware,
@@ -31,6 +36,7 @@ from toolforge.server import MCPServer
 
 __all__ = [
     "ConfigurationError",
+    "DSPyToolMapper",
     "EntrypointNotFoundError",
     "InvalidConfigurationError",
     "MCPServer",
@@ -48,10 +54,12 @@ __all__ = [
     "ResourceRegistrationError",
     "ResourceRegistry",
     "SchemaGenerationError",
+    "StaticToolMapper",
     "ToolAlreadyRegisteredError",
     "ToolExecutionError",
     "ToolForgeConfig",
     "ToolForgeError",
+    "ToolMapper",
     "ToolNotFoundError",
     "ToolRegistrationError",
     "ToolValidationError",
