@@ -86,7 +86,7 @@ class MCPAdapter:
 
                     if inspect.iscoroutinefunction(tf_tool.fn):
 
-                        async def final_call() -> Any:
+                        async def async_final_call() -> Any:
                             nonlocal called_next
                             called_next = True
                             from toolforge.validation import validate_tool_arguments
@@ -104,9 +104,10 @@ class MCPAdapter:
                                     ) from inner_e
                                 raise
 
+                        target_final_call = async_final_call
                     else:
 
-                        def final_call() -> Any:
+                        def sync_final_call() -> Any:
                             nonlocal called_next
                             called_next = True
                             from toolforge.validation import validate_tool_arguments
@@ -124,8 +125,12 @@ class MCPAdapter:
                                     ) from inner_e
                                 raise
 
+                        target_final_call = sync_final_call
+
                     start_time = time.perf_counter()
-                    chain_callable = build_chain(self.server.middlewares, context, final_call)
+                    chain_callable = build_chain(
+                        self.server.middlewares, context, target_final_call
+                    )
 
                     try:
                         if inspect.iscoroutinefunction(chain_callable) or is_async_callable(
@@ -239,7 +244,7 @@ class MCPAdapter:
                         message=f"Failed to serialize resource content to JSON: {json_e}",
                     ) from json_e
 
-                contents = [
+                contents: list[t.TextResourceContents | t.BlobResourceContents] = [
                     t.TextResourceContents(
                         uri=tf_resource.uri,
                         text=serialized_text,
@@ -345,7 +350,7 @@ class MCPAdapter:
             # 4. Map return value to MCP prompt messages format
             messages = []
 
-            def make_text_message(text_val: str, role_val: str = "user") -> t.PromptMessage:
+            def make_text_message(text_val: str, role_val: Any = "user") -> t.PromptMessage:
                 return t.PromptMessage(
                     role=role_val,
                     content=t.TextContent(type="text", text=text_val),

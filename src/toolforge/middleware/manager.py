@@ -54,15 +54,15 @@ def build_chain(
                 wrapped_next = async_wrapped
 
             # Create the async wrapper closure
-            async def next_step(m=mw, c=context, n=wrapped_next):
+            async def async_next_step(m=mw, c=context, n=wrapped_next):
                 return await m(c, n)
 
-            current_next = next_step
+            current_next = async_next_step
         else:
             # Create the sync wrapper closure
-            def next_step(m=mw, c=context, n=current_next):
+            def sync_next_step(m=mw, c=context, n=current_next):
                 return m(c, n)
 
-            current_next = next_step
+            current_next = sync_next_step
 
     return current_next

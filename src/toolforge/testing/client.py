@@ -168,7 +168,7 @@ class MCPTestClient:
 
             if inspect.iscoroutinefunction(tf_tool.fn):
 
-                async def final_call() -> Any:
+                async def async_final_call() -> Any:
                     nonlocal called_next
                     called_next = True
                     from toolforge.validation import validate_tool_arguments
@@ -183,9 +183,10 @@ class MCPTestClient:
                             ) from inner_e
                         raise
 
+                target_final_call = async_final_call
             else:
 
-                def final_call() -> Any:
+                def sync_final_call() -> Any:
                     nonlocal called_next
                     called_next = True
                     from toolforge.validation import validate_tool_arguments
@@ -200,8 +201,10 @@ class MCPTestClient:
                             ) from inner_e
                         raise
 
+                target_final_call = sync_final_call
+
             start_time = time.perf_counter()
-            chain_callable = build_chain(self._server.middlewares, context, final_call)
+            chain_callable = build_chain(self._server.middlewares, context, target_final_call)
 
             if inspect.iscoroutinefunction(chain_callable) or is_async_callable(chain_callable):
                 result = await chain_callable()

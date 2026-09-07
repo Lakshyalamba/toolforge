@@ -66,7 +66,7 @@ class Resource:
                 raise ResourceRegistrationError(
                     "Resource MIME type cannot be empty or whitespace-only."
                 )
-            self._mime_type = mime_type.strip()
+            self._mime_type: str | None = mime_type.strip()
         else:
             self._mime_type = None
 
